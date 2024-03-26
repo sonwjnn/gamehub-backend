@@ -13,16 +13,80 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  USER
+}
+
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  email     String?  @unique
-  name      String?
-  password  String
-  token     String?
-  salt      String
+  id       String   @id @default(cuid())
+  username String   @unique
+  email    String?  @unique
+  name     String?
+  password String
+  token    String?
+  salt     String
+  role     UserRole @default(USER)
+
+  rooms   Room[]
+  members Member[]
+
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
 
   @@map(name: "users")
+}
+
+model Room {
+  id       String @id @default(cuid())
+  name     String
+  dealerId String
+  eventId  String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  members  Member[]
+  messages Message[]
+
+  min    Int
+  max    Int
+  status String
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@index([userId])
+}
+
+model Member {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id])
+
+  messages Message[]
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+}
+
+model Message {
+  id String @id @default(cuid())
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id])
+
+  content  String
+  memberId String
+  member   Member  @relation(fields: [memberId], references: [id])
+  deleted  Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
+  @@index([memberId])
+  @@index([roomId])
 }

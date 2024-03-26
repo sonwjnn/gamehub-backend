@@ -1,11 +1,7 @@
 import express from 'express'
-import {
-  deleteUserById,
-  getUsers,
-  getUserById,
-  updateUserById,
-} from '../db/users'
+import { getUsers, getUserById } from '../db/users'
 import responseHandler from '../handlers/response-handler'
+import { db } from '../lib/db'
 
 export const getAllUsers = async (
   req: express.Request,
@@ -21,23 +17,26 @@ export const getAllUsers = async (
   }
 }
 
-export const deleteUser = async (
+export const deleteUserById = async (
   req: express.Request,
   res: express.Response
 ) => {
   try {
     const { id } = req.params
 
-    await deleteUserById(id)
+    await db.user.delete({
+      where: {
+        id,
+      },
+    })
 
     return responseHandler.ok(res, { message: 'Delete user successfully!' })
   } catch (error) {
-    console.log(error)
     responseHandler.error(res)
   }
 }
 
-export const updateUser = async (
+export const updateUserById = async (
   req: express.Request,
   res: express.Response
 ) => {
@@ -46,16 +45,21 @@ export const updateUser = async (
     const { username } = req.body
 
     if (!username) {
-      return res.sendStatus(400)
+      return responseHandler.notfound(res)
     }
 
-    const user = await getUserById(id)
+    const existingUser = await getUserById(id)
 
-    if (!user) {
-      return res.sendStatus(400)
+    if (!existingUser) {
+      return responseHandler.badrequest(res, 'User not found')
     }
 
-    const updatedUser = await updateUserById(id, { username })
+    const updatedUser = await db.user.update({
+      where: {
+        id,
+      },
+      data: { username },
+    })
 
     responseHandler.ok(res, {
       user: updatedUser,

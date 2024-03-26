@@ -1,17 +1,25 @@
 import express from 'express'
 
-import { getAllUsers, deleteUser, updateUser } from '../controllers/users'
+import {
+  getAllUsers,
+  deleteUserById,
+  updateUserById,
+} from '../controllers/users'
 import { isAuthenticated, isOwner } from '../middlewares'
 import requestHandler from '../handlers/request-handler'
 
-export default (router: express.Router) => {
-  router.get('/users', isAuthenticated, getAllUsers)
-  router.delete('/users/:id', isAuthenticated, isOwner, deleteUser)
+const router = express.Router({ mergeParams: true })
+
+export default (): express.Router => {
+  router.get('/', isAuthenticated, getAllUsers)
+  router.delete('/:id', isAuthenticated, isOwner, deleteUserById)
   router.patch(
-    '/users/:id',
+    '/:id',
     isAuthenticated,
     isOwner,
     requestHandler.validate,
-    updateUser
+    updateUserById
   )
+
+  return router
 }

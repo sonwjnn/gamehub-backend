@@ -1,27 +1,23 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 
-import {
-  getUserByEmail,
-  createUser,
-  updateUserById,
-  getUserByUsername,
-} from '../db/users'
+import { getUserByEmail, getUserByUsername } from '../db/users'
 import { authentication, random } from '../helpers'
 import responseHandler from '../handlers/response-handler'
+import { db } from '../lib/db'
 
 export const login = async (req: express.Request, res: express.Response) => {
   try {
     const { username, password } = req.body
 
     if (!username || !password) {
-      return res.sendStatus(400)
+      return responseHandler.notfound(res)
     }
 
     const user = await getUserByUsername(username)
 
     if (!user) {
-      return responseHandler.badrequest(res, 'User not exist')
+      return responseHandler.badrequest(res, 'User does not exist')
     }
 
     const expectedHash = authentication(user.salt as string, password)
@@ -33,8 +29,13 @@ export const login = async (req: express.Request, res: express.Response) => {
     const salt = random()
     const updateToken = authentication(salt, user.id.toString())
 
-    const updatedUser = await updateUserById(user.id, {
-      token: updateToken,
+    const updatedUser = await db.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        token: updateToken,
+      },
     })
 
     res.cookie('SONWIN-AUTH', updateToken, {
@@ -48,7 +49,6 @@ export const login = async (req: express.Request, res: express.Response) => {
       msg: 'Login successfully!',
     })
   } catch (error) {
-    console.log(error)
     responseHandler.error(res)
   }
 }
@@ -68,11 +68,14 @@ export const register = async (req: express.Request, res: express.Response) => {
     }
 
     const salt = random()
-    const user = await createUser({
-      email,
-      username,
-      salt,
-      password: authentication(salt, password),
+
+    const user = await db.user.create({
+      data: {
+        email,
+        username,
+        salt,
+        password: authentication(salt, password),
+      },
     })
 
     responseHandler.created(res, {
@@ -81,7 +84,6 @@ export const register = async (req: express.Request, res: express.Response) => {
       message: 'Sign up successfully!',
     })
   } catch (error) {
-    console.log(error)
     responseHandler.error(res)
   }
 }
