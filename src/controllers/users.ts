@@ -5,6 +5,7 @@ import {
   getUserById,
   updateUserById,
 } from '../db/users'
+import responseHandler from '../handlers/response-handler'
 
 export const getAllUsers = async (
   req: express.Request,
@@ -13,10 +14,10 @@ export const getAllUsers = async (
   try {
     const users = await getUsers()
 
-    return res.status(200).json(users)
+    return responseHandler.ok(res, users)
   } catch (error) {
     console.log(error)
-    return res.sendStatus(400)
+    responseHandler.error(res)
   }
 }
 
@@ -27,12 +28,12 @@ export const deleteUser = async (
   try {
     const { id } = req.params
 
-    const deletedUser = await deleteUserById(id)
+    await deleteUserById(id)
 
-    return res.json(deletedUser)
+    return responseHandler.ok(res, { message: 'Delete user successfully!' })
   } catch (error) {
     console.log(error)
-    return res.sendStatus(400)
+    responseHandler.error(res)
   }
 }
 
@@ -56,9 +57,11 @@ export const updateUser = async (
 
     const updatedUser = await updateUserById(id, { username })
 
-    return res.status(200).json(updatedUser).end()
+    responseHandler.ok(res, {
+      user: updatedUser,
+      message: 'Update user successfully!',
+    })
   } catch (error) {
-    console.log(error)
-    return res.sendStatus(400)
+    responseHandler.error(res)
   }
 }

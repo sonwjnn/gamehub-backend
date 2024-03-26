@@ -8,6 +8,7 @@ import {
   getUserByUsername,
 } from '../db/users'
 import { authentication, random } from '../helpers'
+import responseHandler from '../handlers/response-handler'
 
 export const login = async (req: express.Request, res: express.Response) => {
   try {
@@ -20,34 +21,35 @@ export const login = async (req: express.Request, res: express.Response) => {
     const user = await getUserByUsername(username)
 
     if (!user) {
-      return res.sendStatus(400)
+      return responseHandler.badrequest(res, 'User not exist')
     }
 
     const expectedHash = authentication(user.salt as string, password)
 
     if (user.password != expectedHash) {
-      return res.sendStatus(403)
+      return responseHandler.badrequest(res, 'Password not match')
     }
 
     const salt = random()
-    const token = jwt.sign({ data: user.id }, process.env.SECRET_TOKEN!, {
-      expiresIn: '24h',
-    })
+    const updateToken = authentication(salt, user.id.toString())
 
     const updatedUser = await updateUserById(user.id, {
-      salt,
-      token,
+      token: updateToken,
     })
 
-    res.cookie('SONWIN-AUTH', token, {
+    res.cookie('SONWIN-AUTH', updateToken, {
       domain: 'localhost',
       path: '/',
     })
 
-    return res.status(200).json(updatedUser).end()
+    responseHandler.created(res, {
+      user: updatedUser,
+      id: user.id,
+      msg: 'Login successfully!',
+    })
   } catch (error) {
     console.log(error)
-    return res.sendStatus(400)
+    responseHandler.error(res)
   }
 }
 
@@ -56,18 +58,14 @@ export const register = async (req: express.Request, res: express.Response) => {
     const { email, password, username } = req.body
 
     if (!email || !password || !username) {
-      return res.sendStatus(400)
+      return responseHandler.notfound(res)
     }
 
     const existingUser = await getUserByEmail(email)
 
     if (existingUser) {
-      return res.sendStatus(400)
+      return responseHandler.badrequest(res, 'User name already used')
     }
-
-    const token = jwt.sign({ data: username }, process.env.SECRET_TOKEN!, {
-      expiresIn: '24h',
-    })
 
     const salt = random()
     const user = await createUser({
@@ -77,9 +75,13 @@ export const register = async (req: express.Request, res: express.Response) => {
       password: authentication(salt, password),
     })
 
-    return res.status(200).json({ user, token }).end()
+    responseHandler.created(res, {
+      user,
+      id: user?.id,
+      message: 'Sign up successfully!',
+    })
   } catch (error) {
     console.log(error)
-    return res.sendStatus(400)
+    responseHandler.error(res)
   }
 }

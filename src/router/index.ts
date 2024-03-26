@@ -6,9 +6,8 @@ import users from './users'
 const router = express.Router()
 
 export default (): express.Router => {
-  // Front end api routes
-  router.use('/api', authentication)
-  router.use('/api', users)
+  authentication(router)
+  users(router)
 
   return router
 }

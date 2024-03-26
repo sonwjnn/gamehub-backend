@@ -2,24 +2,54 @@ import express from 'express'
 import { merge, get } from 'lodash'
 import jwt from 'jsonwebtoken'
 import { getUserByToken } from '../db/users'
+import responseHandler from '../handlers/response-handler'
 
-const tokenDecode = (req: express.Request) => {
-  try {
-    const bearerHeader = req.headers['authorization']
-    if (bearerHeader) {
-      const token = bearerHeader.split(' ')[1]
-      return jwt.verify(token, process.env.SECRET_TOKEN!)
-    }
+// const tokenDecode = (req: express.Request) => {
+//   try {
+//     const bearerHeader = req.headers['authorization']
+//     if (bearerHeader) {
+//       const token = bearerHeader.split(' ')[1]
+//       return jwt.verify(token, process.env.SECRET_TOKEN!)
+//     }
 
-    if (req.cookies.token) {
-      const token = req.cookies.token
-      return jwt.verify(token, process.env.SECRET_TOKEN!)
-    }
-    return false
-  } catch (error) {
-    return false
-  }
-}
+//     if (req.cookies.token) {
+//       const token = req.cookies.token
+//       return jwt.verify(token, process.env.SECRET_TOKEN!)
+//     }
+//     return false
+//   } catch (error) {
+//     return false
+//   }
+// }
+
+// export const isAuthenticated = async (
+//   req: express.Request,
+//   res: express.Response,
+//   next: express.NextFunction
+// ) => {
+//   try {
+//     const tokenDecoded = tokenDecode(req)
+
+//     console.log(tokenDecoded)
+
+//     if (!tokenDecoded) {
+//       return res.sendStatus(403)
+//     }
+
+//     const existingUser = await getUserByToken(tokenDecoded as string)
+
+//     if (!existingUser) {
+//       return res.sendStatus(403)
+//     }
+
+//     merge(req, { user: existingUser })
+
+//     return next()
+//   } catch (error) {
+//     console.log(error)
+//     return res.sendStatus(400)
+//   }
+// }
 
 export const isAuthenticated = async (
   req: express.Request,
@@ -27,13 +57,13 @@ export const isAuthenticated = async (
   next: express.NextFunction
 ) => {
   try {
-    const tokenDecoded = tokenDecode(req)
+    const sessionToken = req.cookies['SONWIN-AUTH']
 
-    if (!tokenDecoded) {
+    if (!sessionToken) {
       return res.sendStatus(403)
     }
 
-    const existingUser = await getUserByToken(tokenDecoded as string)
+    const existingUser = await getUserByToken(sessionToken)
 
     if (!existingUser) {
       return res.sendStatus(403)
@@ -44,7 +74,7 @@ export const isAuthenticated = async (
     return next()
   } catch (error) {
     console.log(error)
-    return res.sendStatus(400)
+    responseHandler.error(res)
   }
 }
 
@@ -68,6 +98,6 @@ export const isOwner = async (
     next()
   } catch (error) {
     console.log(error)
-    return res.sendStatus(400)
+    responseHandler.error(res)
   }
 }

@@ -16,11 +16,13 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   username  String   @unique
-  email     String   @unique
+  email     String?  @unique
   name      String?
   password  String
   token     String?
   salt      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@map(name: "users")
 }
