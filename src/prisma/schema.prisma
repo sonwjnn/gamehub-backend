@@ -28,8 +28,11 @@ model User {
   salt     String
   role     UserRole @default(USER)
 
-  rooms   Room[]
-  members Member[]
+  rooms     Room[]
+  members   Member[]
+  banks     Bank[]
+  recharges Recharge[]
+  withdraws Withdraw[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
@@ -38,12 +41,12 @@ model User {
 }
 
 model Room {
-  id       String @id @default(cuid())
-  name     String
-  dealerId String
-  eventId  String
+  id      String  @id @default(cuid())
+  name    String
+  eventId String? @map(name: "event_id")
+  event   Event?  @relation(fields: [eventId], references: [id])
 
-  userId String
+  userId String @map(name: "user_id")
   user   User   @relation(fields: [userId], references: [id])
 
   members  Member[]
@@ -57,31 +60,36 @@ model Room {
   updatedAt DateTime @updatedAt @map(name: "updated_at")
 
   @@index([userId])
+  @@map(name: "rooms")
 }
 
 model Member {
   id String @id @default(cuid())
 
-  userId String
+  userId String @map(name: "user_id")
   user   User   @relation(fields: [userId], references: [id])
 
-  roomId String
+  roomId String @map(name: "room_id")
   room   Room   @relation(fields: [roomId], references: [id])
 
   messages Message[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@index([userId])
+  @@index([roomId])
+  @@map(name: "members")
 }
 
 model Message {
   id String @id @default(cuid())
 
-  roomId String
+  roomId String @map(name: "room_id")
   room   Room   @relation(fields: [roomId], references: [id])
 
   content  String
-  memberId String
+  memberId String  @map(name: "member_id")
   member   Member  @relation(fields: [memberId], references: [id])
   deleted  Boolean @default(false)
 
@@ -89,4 +97,90 @@ model Message {
 
   @@index([memberId])
   @@index([roomId])
+  @@map(name: "messages")
+}
+
+model Event {
+  id   String @id @default(cuid())
+  name String
+
+  prize  Int
+  min    Int
+  max    Int
+  status String
+
+  rooms Room[]
+
+  start DateTime
+  end   DateTime
+
+  @@map(name: "events")
+}
+
+model Bank {
+  id String @id @default(cuid())
+
+  name       String
+  user_id    String   @map(name: "user_id")
+  user       User     @relation(fields: [user_id], references: [id])
+  branch     String
+  number1    String
+  number2    String
+  username   String
+  password   String
+  status     String
+  bankcode   String
+  linkqrcode String
+  createdAt  DateTime @default(now()) @map(name: "created_at")
+  updatedAt  DateTime @updatedAt @map(name: "updated_at")
+
+  @@map(name: "banks")
+}
+
+model Recharge {
+  id            String @id @default(cuid())
+  tranId        String @unique @map(name: "tran_id")
+  numberTranId  String @unique @map(name: "number_tran_id")
+  tranHistoryId String @unique @map(name: "tran_history_id")
+
+  userId String @map(name: "user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  amount    Int
+  desc      String
+  type      String
+  number1   String
+  number2   String
+  branch    String
+  bankCode  String    @map(name: "bank_code")
+  name      String
+  status    String
+  deletedAt DateTime? @map(name: "deleted_at")
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime  @updatedAt @map(name: "updated_at")
+
+  @@map(name: "recharges")
+}
+
+model Withdraw {
+  id String @id @default(cuid())
+
+  userId String @map(name: "user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  bankCode  String    @map(name: "bank_code")
+  cardName  String    @map(name: "card_name")
+  cardCode  String    @map(name: "card_code")
+  amount    Int
+  comment   String
+  token     String
+  tranId    String    @unique @map(name: "tran_id")
+  isBank    Boolean   @default(false) @map(name: "is_bank")
+  status    String
+  deletedAt DateTime? @map(name: "deleted_at")
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@map(name: "withdraws")
 }

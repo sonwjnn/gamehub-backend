@@ -1,12 +1,9 @@
 import express from 'express'
-import { getUsers, getUserById } from '../db/users'
+import { getUsers, getUserById, updateUserById } from '../db/users'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
 
-export const getAllUsers = async (
-  req: express.Request,
-  res: express.Response
-) => {
+const getAllUsers = async (req: express.Request, res: express.Response) => {
   try {
     const users = await getUsers()
 
@@ -17,10 +14,7 @@ export const getAllUsers = async (
   }
 }
 
-export const deleteUserById = async (
-  req: express.Request,
-  res: express.Response
-) => {
+const deleteUserById = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params
 
@@ -36,10 +30,7 @@ export const deleteUserById = async (
   }
 }
 
-export const updateUserById = async (
-  req: express.Request,
-  res: express.Response
-) => {
+const update = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params
     const { username } = req.body
@@ -54,12 +45,7 @@ export const updateUserById = async (
       return responseHandler.badrequest(res, 'User not found')
     }
 
-    const updatedUser = await db.user.update({
-      where: {
-        id,
-      },
-      data: { username },
-    })
+    const updatedUser = await updateUserById(existingUser.id, { username })
 
     responseHandler.ok(res, {
       user: updatedUser,
@@ -68,4 +54,27 @@ export const updateUserById = async (
   } catch (error) {
     responseHandler.error(res)
   }
+}
+
+const getUser = async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params
+
+    const user = await getUserById(id)
+
+    if (!user) {
+      return responseHandler.notfound(res)
+    }
+
+    responseHandler.ok(res, user)
+  } catch (error) {
+    responseHandler.error(res)
+  }
+}
+
+export default {
+  getAllUsers,
+  getUser,
+  deleteUserById,
+  update,
 }

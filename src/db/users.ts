@@ -67,3 +67,21 @@ export const getUserByUsername = async (username: string) => {
     return null
   }
 }
+
+export const updateUserById = async (
+  id: string,
+  data: Prisma.UserUpdateInput
+) => {
+  try {
+    const user = await db.user.update({
+      where: {
+        id,
+      },
+      data,
+    })
+
+    return user
+  } catch {
+    throw new Error('Internal Error')
+  }
+}

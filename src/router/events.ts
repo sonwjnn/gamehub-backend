@@ -1,21 +1,21 @@
 import express from 'express'
 
-import userController from '../controllers/users'
+import eventController from '../controllers/events'
 import { isAuthenticated, isOwner } from '../middlewares'
 import requestHandler from '../handlers/request-handler'
 
 const router = express.Router({ mergeParams: true })
 
 export default (): express.Router => {
-  router.get('/all', userController.getAllUsers)
-  router.get('/:id', userController.getUser)
-  router.delete('/:id', isAuthenticated, isOwner, userController.deleteUserById)
+  router.get('/all', eventController.getAllEvents)
+  router.get('/:id', eventController.getEvent)
+  router.post('/', isAuthenticated, eventController.createEvent)
+  router.delete('/:id', isAuthenticated, eventController.deleteEventById)
   router.patch(
     '/:id',
     isAuthenticated,
-    isOwner,
     requestHandler.validate,
-    userController.update
+    eventController.updateEventById
   )
 
   return router

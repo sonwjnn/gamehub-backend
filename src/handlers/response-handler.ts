@@ -17,7 +17,7 @@ const badrequest = (res: Response, message: string) =>
     message,
   })
 
-const ok = (res: Response, data: any) => responseWithData(res, 200, data)
+const ok = (res: Response, data?: any) => responseWithData(res, 200, data)
 
 const created = (res: Response, data: any) => responseWithData(res, 201, data)
 

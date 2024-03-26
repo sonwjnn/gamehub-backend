@@ -1,12 +1,12 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 
-import { getUserByEmail, getUserByUsername } from '../db/users'
+import { getUserByEmail, getUserByUsername, updateUserById } from '../db/users'
 import { authentication, random } from '../helpers'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
 
-export const login = async (req: express.Request, res: express.Response) => {
+const login = async (req: express.Request, res: express.Response) => {
   try {
     const { username, password } = req.body
 
@@ -29,13 +29,8 @@ export const login = async (req: express.Request, res: express.Response) => {
     const salt = random()
     const updateToken = authentication(salt, user.id.toString())
 
-    const updatedUser = await db.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        token: updateToken,
-      },
+    const updatedUser = await updateUserById(user.id, {
+      token: updateToken,
     })
 
     res.cookie('SONWIN-AUTH', updateToken, {
@@ -53,7 +48,7 @@ export const login = async (req: express.Request, res: express.Response) => {
   }
 }
 
-export const register = async (req: express.Request, res: express.Response) => {
+const register = async (req: express.Request, res: express.Response) => {
   try {
     const { email, password, username } = req.body
 
@@ -86,4 +81,9 @@ export const register = async (req: express.Request, res: express.Response) => {
   } catch (error) {
     responseHandler.error(res)
   }
+}
+
+export default {
+  login,
+  register,
 }
