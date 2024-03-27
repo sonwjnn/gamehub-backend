@@ -33,11 +33,6 @@ const deleteUserById = async (req: express.Request, res: express.Response) => {
 const update = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params
-    const { username } = req.body
-
-    if (!username) {
-      return responseHandler.notfound(res)
-    }
 
     const existingUser = await getUserById(id)
 
@@ -45,10 +40,10 @@ const update = async (req: express.Request, res: express.Response) => {
       return responseHandler.badrequest(res, 'User not found')
     }
 
-    const updatedUser = await updateUserById(existingUser.id, { username })
+    const updatedUser = await updateUserById(existingUser.id, { ...req.body })
 
     responseHandler.ok(res, {
-      user: updatedUser,
+      ...updatedUser,
       message: 'Update user successfully!',
     })
   } catch (error) {

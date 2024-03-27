@@ -4,9 +4,9 @@ import { Prisma } from '@prisma/client'
 // Room Actions
 export const getRooms = async () => {
   try {
-    const room = await db.room.findMany()
+    const rooms = await db.room.findMany()
 
-    return room
+    return rooms
   } catch {
     return null
   }

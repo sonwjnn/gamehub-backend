@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
-import { getRoomById, getRooms } from '../db/rooms'
+import { getRoomById, getRooms, updateRoomById } from '../db/rooms'
 
 const getAllRooms = async (req: Request, res: Response) => {
   try {
@@ -30,8 +30,13 @@ const deleteRoomById = async (req: Request, res: Response) => {
   }
 }
 
-const updateRoomById = async (req: Request, res: Response) => {
+const updateRoom = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params
+
+    const room = await updateRoomById(id, req.body)
+
+    responseHandler.ok(res, room)
   } catch (error) {
     responseHandler.error(res)
   }
@@ -69,5 +74,5 @@ export default {
   createRoom,
   getAllRooms,
   deleteRoomById,
-  updateRoomById,
+  updateRoom,
 }

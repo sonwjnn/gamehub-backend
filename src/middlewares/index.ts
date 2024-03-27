@@ -1,7 +1,7 @@
 import express from 'express'
 import { merge, get } from 'lodash'
 import jwt from 'jsonwebtoken'
-import { getUserByToken } from '../db/users'
+import { getUserById, getUserByToken } from '../db/users'
 import responseHandler from '../handlers/response-handler'
 
 // const tokenDecode = (req: express.Request) => {
@@ -9,6 +9,7 @@ import responseHandler from '../handlers/response-handler'
 //     const bearerHeader = req.headers['authorization']
 //     if (bearerHeader) {
 //       const token = bearerHeader.split(' ')[1]
+//       console.log(token)
 //       return jwt.verify(token, process.env.SECRET_TOKEN!)
 //     }
 
@@ -30,16 +31,14 @@ import responseHandler from '../handlers/response-handler'
 //   try {
 //     const tokenDecoded = tokenDecode(req)
 
-//     console.log(tokenDecoded)
-
 //     if (!tokenDecoded) {
-//       return res.sendStatus(403)
+//       return responseHandler.badrequest(res, 'Invalid token')
 //     }
 
-//     const existingUser = await getUserByToken(tokenDecoded as string)
+//     const existingUser = await getUserById(tokenDecoded as string)
 
 //     if (!existingUser) {
-//       return res.sendStatus(403)
+//       return responseHandler.badrequest(res, 'User not found')
 //     }
 
 //     merge(req, { user: existingUser })
@@ -47,7 +46,7 @@ import responseHandler from '../handlers/response-handler'
 //     return next()
 //   } catch (error) {
 //     console.log(error)
-//     return res.sendStatus(400)
+//     return responseHandler.error(res)
 //   }
 // }
 

@@ -12,7 +12,7 @@ const app = express()
 
 app.use(
   cors({
-    // credentials: true,
+    credentials: true,
     // ...corsOptions,
   })
 )
