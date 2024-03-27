@@ -18,13 +18,13 @@ const deleteRoomById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
 
-    await db.room.delete({
+    const deletedRoom = await db.room.delete({
       where: {
         id,
       },
     })
 
-    responseHandler.ok(res)
+    responseHandler.ok(res, deletedRoom)
   } catch (error) {
     responseHandler.error(res)
   }
