@@ -2,6 +2,9 @@ import { Response } from 'express'
 
 const responseWithData = (res: Response, statusCode: number, data: any) => {
   if (res.headersSent) return
+  res.set('X-Total-Count', '30')
+  res.set('Access-Control-Expose-Headers', 'Content-Range')
+  res.set('Content-Range', 'bytes: 0-9/*')
   res.status(statusCode).json(data)
 }
 
