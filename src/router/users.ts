@@ -7,7 +7,7 @@ import requestHandler from '../handlers/request-handler'
 const router = express.Router({ mergeParams: true })
 
 export default (): express.Router => {
-  router.get('/all', userController.getAllUsers)
+  router.get('/', userController.getAllUsers)
   router.get('/:id', userController.getUser)
   router.delete('/:id', isAuthenticated, isOwner, userController.deleteUserById)
   router.patch(

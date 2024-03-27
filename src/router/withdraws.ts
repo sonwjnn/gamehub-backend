@@ -7,7 +7,7 @@ import requestHandler from '../handlers/request-handler'
 const router = express.Router({ mergeParams: true })
 
 export default (): express.Router => {
-  router.get('/all', withdrawController.getAllWithdraws)
+  router.get('/', withdrawController.getAllWithdraws)
   router.get('/:id', withdrawController.getWithdraw)
   router.post('/', isAuthenticated, withdrawController.createWithdraw)
   router.delete('/:id', isAuthenticated, withdrawController.deleteWithdrawById)

@@ -7,7 +7,7 @@ import requestHandler from '../handlers/request-handler'
 const router = express.Router({ mergeParams: true })
 
 export default (): express.Router => {
-  router.get('/all', rechargeController.getAllRecharges)
+  router.get('/', rechargeController.getAllRecharges)
   router.get('/:id', rechargeController.getRecharge)
   router.post('/', isAuthenticated, rechargeController.createRecharge)
   router.delete('/:id', isAuthenticated, rechargeController.deleteRechargeById)

@@ -6,7 +6,8 @@ import { isAuthenticated, isOwner } from '../middlewares'
 const router = express.Router({ mergeParams: true })
 
 export default (): express.Router => {
-  router.post('/', isAuthenticated, messageController.createMessage)
+  router.get('/', messageController.getMessages)
+  router.post('/', isAuthenticated, isOwner, messageController.createMessage)
 
   return router
 }

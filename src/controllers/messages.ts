@@ -1,6 +1,27 @@
 import { Request, Response } from 'express'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
+import { getMessagesByRoomId } from '../db/messages'
+
+const getMessages = async (req: Request, res: Response) => {
+  try {
+    const { roomId, cursor } = req.query
+
+    if (!roomId) {
+      return responseHandler.notfound(res)
+    }
+
+    const messages = await getMessagesByRoomId({
+      roomId: roomId as string,
+      cursor: cursor as string,
+    })
+
+    return responseHandler.ok(res, messages)
+  } catch (error) {
+    console.log(error)
+    responseHandler.error(res)
+  }
+}
 
 const createMessage = async (req: Request, res: Response) => {
   try {
@@ -60,5 +81,6 @@ const createMessage = async (req: Request, res: Response) => {
 }
 
 export default {
+  getMessages,
   createMessage,
 }

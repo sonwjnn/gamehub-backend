@@ -7,7 +7,7 @@ import requestHandler from '../handlers/request-handler'
 const router = express.Router({ mergeParams: true })
 
 export default (): express.Router => {
-  router.get('/all', eventController.getAllEvents)
+  router.get('/', eventController.getAllEvents)
   router.get('/:id', eventController.getEvent)
   router.post('/', isAuthenticated, eventController.createEvent)
   router.delete('/:id', isAuthenticated, eventController.deleteEventById)

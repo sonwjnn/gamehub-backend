@@ -88,11 +88,11 @@ export const isOwner = async (
     const currentUserId = get(req, 'user.id') as unknown as string
 
     if (!currentUserId) {
-      return res.sendStatus(400)
+      return responseHandler.badrequest(res, 'User not found')
     }
 
     if (currentUserId.toString() !== id) {
-      return res.sendStatus(403)
+      return responseHandler.badrequest(res, 'You are not the owner')
     }
 
     next()
