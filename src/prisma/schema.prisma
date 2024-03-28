@@ -111,8 +111,8 @@ model Event {
 
   rooms Room[]
 
-  start DateTime
-  end   DateTime
+  start DateTime @default(now())
+  end   DateTime @default(now())
 
   @@map(name: "events")
 }
