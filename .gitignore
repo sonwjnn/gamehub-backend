@@ -170,6 +170,10 @@ dist
 
 # IntelliJ based IDEs
 .idea
+.idea/*
+.idea*
 
 # Finder (MacOS) folder config
 .DS_Store
+
+yarn.lock
