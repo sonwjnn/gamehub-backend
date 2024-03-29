@@ -1,18 +1,18 @@
 import { Request, Response } from 'express'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
-import { getMessagesByRoomId } from '../db/messages'
+import { getMessagesByTableId } from '../db/messages'
 
 const getMessages = async (req: Request, res: Response) => {
   try {
-    const { roomId, cursor } = req.query
+    const { tableId, cursor } = req.query
 
-    if (!roomId) {
+    if (!tableId) {
       return responseHandler.notfound(res)
     }
 
-    const messages = await getMessagesByRoomId({
-      roomId: roomId as string,
+    const messages = await getMessagesByTableId({
+      tableId: tableId as string,
       cursor: cursor as string,
     })
 
@@ -26,42 +26,42 @@ const getMessages = async (req: Request, res: Response) => {
 const createMessage = async (req: Request, res: Response) => {
   try {
     const { content, user } = req.body
-    const { roomId } = req.query
+    const { tableId } = req.query
 
-    if (!content || !user || !roomId) {
+    if (!content || !user || !tableId) {
       return responseHandler.notfound(res)
     }
 
-    const room = await db.room.findFirst({
+    const table = await db.table.findFirst({
       where: {
-        id: roomId as string,
+        id: tableId as string,
       },
       include: {
-        members: true,
+        players: true,
       },
     })
 
-    if (!room) {
-      return responseHandler.badrequest(res, 'Room does not exist')
+    if (!table) {
+      return responseHandler.badrequest(res, 'Table does not exist')
     }
 
-    const member = room.members.find(member => member.userId === user.id)
+    const player = table.players.find(player => player.userId === user.id)
 
-    if (!member) {
+    if (!player) {
       return responseHandler.badrequest(
         res,
-        'You are not a member of this room'
+        'You are not a player of this table'
       )
     }
 
     const message = await db.message.create({
       data: {
         content,
-        roomId: roomId as string,
-        memberId: member.id,
+        tableId: tableId as string,
+        playerId: player.id,
       },
       include: {
-        member: {
+        player: {
           include: {
             user: true,
           },
@@ -69,9 +69,9 @@ const createMessage = async (req: Request, res: Response) => {
       },
     })
 
-    const roomKey = `chat:${roomId}:messages`
+    const tableKey = `chat:${tableId}:messages`
 
-    // res?.socket?.server?.io?.emit(roomKey, message)
+    res?.app.get('io').emit(tableKey, message)
 
     return responseHandler.ok(res, message)
   } catch (error) {

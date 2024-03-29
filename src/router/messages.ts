@@ -6,7 +6,6 @@ const router = express.Router({ mergeParams: true })
 
 export default (): express.Router => {
   router.get('/', messageController.getMessages)
-  router.post('/', messageController.createMessage)
 
   return router
 }

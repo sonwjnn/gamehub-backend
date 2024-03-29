@@ -10,7 +10,8 @@
     "build": "tsc",
     "serve": "node dist/index.js",
     "prettier": "prettier --check \"src/**/(*.ts|*.css|*.scss)\"",
-    "prettier:fix": "prettier --write \"src/**/(*.ts|*.css|*.scss)\""
+    "prettier:fix": "prettier --write \"src/**/(*.ts|*.css|*.scss)\"",
+    "db:seed": "ts-node ./src/scripts/seed.ts"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.5",
