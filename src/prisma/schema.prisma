@@ -19,17 +19,18 @@ enum UserRole {
 }
 
 model User {
-  id       String   @id @default(cuid())
-  username String   @unique
-  email    String?  @unique
-  name     String?
-  password String
-  token    String?
-  salt     String
-  role     UserRole @default(USER)
+  id          String   @id @default(cuid())
+  username    String   @unique
+  email       String?  @unique
+  name        String?
+  password    String
+  token       String?
+  salt        String
+  role        UserRole @default(USER)
+  chipsAmount Int      @default(30000)
 
-  rooms     Room[]
-  members   Member[]
+  tables    Table[]
+  players   Player[]
   banks     Bank[]
   recharges Recharge[]
   withdraws Withdraw[]
@@ -40,7 +41,7 @@ model User {
   @@map(name: "users")
 }
 
-model Room {
+model Table {
   id      String  @id @default(cuid())
   name    String
   eventId String? @map(name: "event_id")
@@ -49,54 +50,123 @@ model Room {
   userId String @map(name: "user_id")
   user   User   @relation(fields: [userId], references: [id])
 
-  members  Member[]
+  players  Player[]
   messages Message[]
 
-  min    Int
-  max    Int
-  status String
+  limit          Int
+  maxPlayers     Int     @default(10) @map(name: "max_players")
+  seats          Int     @default(10)
+  smallBlind     Int?    @map(name: "small_blind")
+  bigBlind       Int?    @map(name: "big_blind")
+  pot            Int     @default(0)
+  mainPot        Int     @default(0) @map(name: "main_pot")
+  callAmount     Int     @default(0) @map(name: "call_amount")
+  wentToShowdown Boolean @default(false) @map(name: "went_to_showdown")
+  minBet         Int?    @map(name: "min_bet")
+  minRaise       Int?    @map(name: "min_raise")
+  deck           Card[]  @relation("TableDeck")
+  board          Card[]  @relation("TableBoard")
+  sidePots       String  @default("[]") @map(name: "side_pots")
+  buttonId       String? @map(name: "button_id")
+  turn           Boolean @default(false)
+
+  histories History[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
 
   @@index([userId])
-  @@map(name: "rooms")
+  @@map(name: "tables")
 }
 
-model Member {
+enum CardRank {
+  A
+  TWO
+  THREE
+  FOUR
+  FIVE
+  SIX
+  SEVEN
+  EIGHT
+  NINE
+  TEN
+  J
+  Q
+  K
+}
+
+enum CardSuit {
+  HEARTS
+  DIAMONDS
+  CLUBS
+  SPADES
+}
+
+model Card {
+  id   String   @id @default(cuid())
+  rank CardRank
+  suit CardSuit
+
+  tableDeck   Table?  @relation("TableDeck", fields: [tableDeckId], references: [id])
+  tableDeckId String?
+
+  tableBoard   Table?  @relation("TableBoard", fields: [tableBoardId], references: [id])
+  tableBoardId String?
+
+  @@map(name: "cards")
+}
+
+model History {
+  id String @id @default(cuid())
+
+  tableId String @map(name: "table_id")
+  table   Table  @relation(fields: [tableId], references: [id])
+
+  content String
+  deleted Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
+  @@index([tableId])
+  @@map(name: "histories")
+}
+
+model Player {
   id String @id @default(cuid())
 
   userId String @map(name: "user_id")
   user   User   @relation(fields: [userId], references: [id])
 
-  roomId String @map(name: "room_id")
-  room   Room   @relation(fields: [roomId], references: [id])
+  socketId String? @map(name: "socket_id")
+  bankroll Int?
+
+  tableId String @map(name: "table_id")
+  table   Table  @relation(fields: [tableId], references: [id])
 
   messages Message[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
-  updatedAt DateTime @updatedAt @map(name: "updated_at")
 
   @@index([userId])
-  @@index([roomId])
-  @@map(name: "members")
+  @@index([tableId])
+  @@map(name: "players")
 }
 
 model Message {
   id String @id @default(cuid())
 
-  roomId String @map(name: "room_id")
-  room   Room   @relation(fields: [roomId], references: [id])
+  tableId String @map(name: "table_id")
+  table   Table  @relation(fields: [tableId], references: [id])
 
   content  String
-  memberId String  @map(name: "member_id")
-  member   Member  @relation(fields: [memberId], references: [id])
+  playerId String  @map(name: "player_id")
+  player   Player  @relation(fields: [playerId], references: [id])
   deleted  Boolean @default(false)
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 
-  @@index([memberId])
-  @@index([roomId])
+  @@index([playerId])
+  @@index([tableId])
   @@map(name: "messages")
 }
 
@@ -109,7 +179,7 @@ model Event {
   max    Int
   status String
 
-  rooms Room[]
+  tables Table[]
 
   start DateTime
   end   DateTime

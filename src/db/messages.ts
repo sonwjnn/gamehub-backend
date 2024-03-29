@@ -3,16 +3,16 @@ import { db } from '../lib/db'
 
 const MESSAGES_BATCH = 10
 
-export const getMessagesByRoomId = async ({
+export const getMessagesByTableId = async ({
   cursor,
-  roomId,
+  tableId,
 }: {
   cursor: string | undefined
-  roomId: string
+  tableId: string
 }) => {
   try {
-    if (!roomId) {
-      throw new Error('Room ID missing')
+    if (!tableId) {
+      throw new Error('Table ID missing')
     }
 
     let messages: Message[] = []
@@ -25,10 +25,10 @@ export const getMessagesByRoomId = async ({
           id: cursor,
         },
         where: {
-          roomId,
+          tableId,
         },
         include: {
-          member: {
+          player: {
             include: {
               user: true,
             },
@@ -42,10 +42,10 @@ export const getMessagesByRoomId = async ({
       messages = await db.message.findMany({
         take: MESSAGES_BATCH,
         where: {
-          roomId,
+          tableId,
         },
         include: {
-          member: {
+          player: {
             include: {
               user: true,
             },
