@@ -208,22 +208,15 @@ model Bank {
 }
 
 model Recharge {
-  id            String @id @default(cuid())
-  tranId        String @unique @map(name: "tran_id")
-  numberTranId  String @unique @map(name: "number_tran_id")
-  tranHistoryId String @unique @map(name: "tran_history_id")
+  id String @id @default(cuid())
 
   userId String @map(name: "user_id")
   user   User   @relation(fields: [userId], references: [id])
 
   amount    Int
-  desc      String
-  type      String
   number1   String
   number2   String
   branch    String
-  bankCode  String    @map(name: "bank_code")
-  name      String
   status    String
   deletedAt DateTime? @map(name: "deleted_at")
   createdAt DateTime  @default(now()) @map(name: "created_at")
@@ -238,13 +231,11 @@ model Withdraw {
   userId String @map(name: "user_id")
   user   User   @relation(fields: [userId], references: [id])
 
-  bankCode  String    @map(name: "bank_code")
   cardName  String    @map(name: "card_name")
   cardCode  String    @map(name: "card_code")
   amount    Int
   comment   String
   token     String
-  tranId    String    @unique @map(name: "tran_id")
   isBank    Boolean   @default(false) @map(name: "is_bank")
   status    String
   deletedAt DateTime? @map(name: "deleted_at")
