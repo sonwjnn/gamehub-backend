@@ -60,9 +60,12 @@ const updatePlayerById = async (req: Request, res: Response) => {
 
 const createPlayer = async (req: Request, res: Response) => {
   try {
+    const { tableId, userId } = req.body
+
     const player = await db.player.create({
       data: {
-        ...req.body,
+        tableId,
+        userId,
       },
     })
 
