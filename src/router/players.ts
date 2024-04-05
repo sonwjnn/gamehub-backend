@@ -10,7 +10,7 @@ export default (): express.Router => {
   router.get('/:id', playerController.getPlayer)
   router.get('/:tableId/:userId', playerController.getCurrentPlayerOfTable)
   router.post('/', playerController.createPlayer)
-  router.delete('/:id', playerController.deletePlayerById)
+  router.delete('/:id', playerController.removePlayer)
   router.put('/:id', requestHandler.validate, playerController.updatePlayerById)
 
   return router

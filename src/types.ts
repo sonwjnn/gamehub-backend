@@ -28,13 +28,39 @@ export interface ServerToClientEvents {
   }) => void
 
   [PokerActions.PLAYERS_UPDATED]: (players: Player[]) => void
+  [PokerActions.JOIN_TABLE]: ({
+    tableId,
+    player,
+  }: {
+    tableId: string
+    player: Player
+  }) => void
+  [PokerActions.LEAVE_TABLE]: ({
+    tableId,
+    player,
+  }: {
+    tableId: string
+    player: Player
+  }) => void
 }
 
 export interface ClientToServerEvents {
   [PokerActions.FETCH_LOBBY_INFO]: (token: string) => void
 
-  [PokerActions.JOIN_TABLE]: (tableId: string) => void
-  [PokerActions.LEAVE_TABLE]: (tableId: string) => void
+  [PokerActions.JOIN_TABLE]: ({
+    tableId,
+    player,
+  }: {
+    tableId: string
+    player: Player
+  }) => void
+  [PokerActions.LEAVE_TABLE]: ({
+    tableId,
+    player,
+  }: {
+    tableId: string
+    player: Player
+  }) => void
   [PokerActions.FOLD]: (tableId: string) => void
   [PokerActions.CHECK]: (tableId: string) => void
   [PokerActions.CALL]: (tableId: string) => void

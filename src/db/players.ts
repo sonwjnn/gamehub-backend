@@ -2,7 +2,12 @@ import { db } from '../lib/db'
 
 export const getPlayers = async () => {
   try {
-    const players = await db.player.findMany()
+    const players = await db.player.findMany({
+      include: {
+        user: true,
+        table: true,
+      },
+    })
     return players
   } catch (error) {
     return []

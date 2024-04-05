@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
 import { getPlayerById, getPlayers } from '../db/players'
+import { PokerActions } from '../pokergame/actions'
 
 const getAllPlayers = async (req: Request, res: Response) => {
   try {
@@ -14,15 +15,19 @@ const getAllPlayers = async (req: Request, res: Response) => {
   }
 }
 
-const deletePlayerById = async (req: Request, res: Response) => {
+const removePlayer = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
+    const { tableId } = req.query
 
-    await db.player.delete({
+    const player = await db.player.delete({
       where: {
         id,
+        tableId: tableId as string,
       },
     })
+
+    res?.app.get('io').emit(PokerActions.LEAVE_TABLE, { tableId, player })
 
     responseHandler.ok(res)
   } catch (error) {
@@ -62,12 +67,28 @@ const createPlayer = async (req: Request, res: Response) => {
   try {
     const { tableId, userId } = req.body
 
+    const isExistingPlayer = await db.player.findFirst({
+      where: {
+        tableId,
+        userId,
+      },
+    })
+
+    if (isExistingPlayer) {
+      return responseHandler.badrequest(res, 'Player already exists')
+    }
+
     const player = await db.player.create({
       data: {
         tableId,
         userId,
       },
+      include: {
+        user: true,
+      },
     })
+
+    res?.app.get('io').emit(PokerActions.JOIN_TABLE, { tableId, player })
 
     responseHandler.ok(res, player)
   } catch (error) {
@@ -108,7 +129,7 @@ export default {
   getPlayer,
   createPlayer,
   getAllPlayers,
-  deletePlayerById,
+  removePlayer,
   updatePlayerById,
   getCurrentPlayerOfTable,
 }

@@ -13,6 +13,7 @@ import jwt, { JwtPayload, VerifyErrors } from 'jsonwebtoken'
 import { User, Player, Table } from '@prisma/client'
 import { jwtVerify } from '../helpers'
 import { PokerActions } from '../pokergame/actions'
+import { getTableById } from '../db/tables'
 
 async function getCurrentPlayers() {
   try {
@@ -50,55 +51,18 @@ interface IInIt {
 }
 
 const init = ({ socket, io }: IInIt) => {
-  socket.on(PokerActions.FETCH_LOBBY_INFO, async function (token: string) {
-    // const user = await jwtVerify(process.env.SECRET_TOKEN!, token)
-    // const players = await getCurrentPlayers()
-    // const tables = await getCurrentTables()
-    // if (user) {
-    //   const found = players.find(player => player.id === user.id)
-    //   if (found) {
-    //     delete players[found.socketId]
-    //     Object.values(tables).map(table => {
-    //       table.removePlayer(found.socketId)
-    //       broadcastToTable(table)
-    //     })
-    //     await  db.player.delete({ where: { id: found.id } })
-    //   }
-    //   user = await User.findById(user.id).select('-password')
-    //   players[socket.id] = new Player(
-    //     socket.id,
-    //     user._id,
-    //     user.name,
-    //     user.chipsAmount
-    //   )
-    //   const player = await db.player.create({})
-    //   socket.emit(PokerActions.RECEIVE_LOBBY_INFO, {
-    //     tables: tables,
-    //     players: players,
-    //     socketId: socket.id,
-    //   })
-    //   socket.broadcast.emit(PokerActions.PLAYERS_UPDATED, players)
-    // }
-  })
+  // socket.on(
+  //   PokerActions.JOIN_TABLE,
+  //   async ({ tableId, player }: { tableId: string; player: Player }) => {
+  //     const table = await getTableById(tableId)
 
-  // socket.on(JOIN_TABLE, tableId => {
-  //   const table = tables[tableId]
-  //   const player = players[socket.id]
+  //     if (!table?.players) {
+  //       return [player]
+  //     }
 
-  //   table.addPlayer(player)
-
-  //   socket.emit(TABLE_JOINED, { tables: getCurrentTables(), tableId })
-  //   socket.broadcast.emit(TABLES_UPDATED, getCurrentTables())
-
-  //   if (
-  //     tables[tableId].players &&
-  //     tables[tableId].players.length > 0 &&
-  //     player
-  //   ) {
-  //     let message = `${player.name} joined the table.`
-  //     broadcastToTable(table, message)
+  //     return table.players
   //   }
-  // })
+  // )
 
   // socket.on(LEAVE_TABLE, tableId => {
   //   const table = tables[tableId]

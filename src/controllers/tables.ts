@@ -44,20 +44,14 @@ const updateTable = async (req: Request, res: Response) => {
 
 const createTable = async (req: Request, res: Response) => {
   try {
-    const { name, limit, userId } = req.body
-
-    const minBet = limit / 200
-    const minRaise = limit / 100
+    const { name, userId, minBuyIn, maxBuyIn } = req.body
 
     const table = await db.table.create({
       data: {
         name,
         userId,
-        limit,
-        minBet,
-        minRaise,
-        smallBlind: minBet,
-        bigBlind: minBet * 2,
+        minBuyIn,
+        maxBuyIn,
       },
     })
 

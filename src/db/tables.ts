@@ -23,6 +23,13 @@ export const getTableById = async (id: string) => {
       where: {
         id,
       },
+      include: {
+        players: {
+          include: {
+            user: true,
+          },
+        },
+      },
     })
 
     return table
