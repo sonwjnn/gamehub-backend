@@ -77,7 +77,7 @@ export const changeTurn = async (table: TableWithPlayers) => {
         ? table.players[0]
         : table.players[nextPlayerIndex]
 
-    await db.player.update({
+    await db.player.updateMany({
       where: {
         id: currentPlayer.id,
       },

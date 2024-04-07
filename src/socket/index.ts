@@ -300,7 +300,6 @@ const init = ({ socket, io }: IInIt) => {
   ) {
     for (let i = 0; i < table.players.length; i++) {
       let socketId = table.players[i].socketId as string
-      console.log(socketId)
       // let tableCopy = hideOpponentCards(table, socketId)
       io.to(socketId).emit(PokerActions.TABLE_MESSAGE, {
         message,

@@ -1,4 +1,5 @@
 import { db } from '../lib/db'
+import { PokerActions } from '../pokergame/actions'
 
 export const getParticipants = async () => {
   try {
@@ -30,6 +31,7 @@ export const handlePacticipantFold = async (id: string) => {
       },
       data: {
         isFolded: true,
+        lastAction: PokerActions.FOLD,
       },
       include: {
         player: {
@@ -99,6 +101,7 @@ export const handlePacticipantCheck = async (id: string) => {
       },
       data: {
         isChecked: true,
+        lastAction: PokerActions.CHECK,
       },
       include: {
         player: {
