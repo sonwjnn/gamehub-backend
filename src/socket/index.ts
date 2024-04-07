@@ -1,8 +1,15 @@
+import {
+  handlePacticipantCall,
+  handlePacticipantCheck,
+  handlePacticipantFold,
+  handlePacticipantRaise,
+} from './../db/participants'
 import { Socket } from 'socket.io'
 import { db } from '../lib/db'
 import {
   ClientToServerEvents,
   InterServerEvents,
+  MatchWithParticipants,
   PlayerWithUser,
   ServerToClientEvents,
   SocketData,
@@ -15,7 +22,8 @@ import jwt, { JwtPayload, VerifyErrors } from 'jsonwebtoken'
 import { User, Player, Table } from '@prisma/client'
 import { jwtVerify } from '../helpers'
 import { PokerActions } from '../pokergame/actions'
-import { getTableById } from '../db/tables'
+import { changeTurn, getTableById } from '../db/tables'
+import { createMatch } from '../db/matches'
 
 async function getCurrentPlayers() {
   try {
@@ -70,9 +78,9 @@ const init = ({ socket, io }: IInIt) => {
 
       broadcastToTable(table, `${player.user?.username} joined`)
 
-      if (table?.players.length === 2) {
+      if (table?.players.length >= 2) {
         // start game
-        // broadcastToTable(table, 'start game')
+        initNewMatch(table)
       }
     }
   )
@@ -89,25 +97,68 @@ const init = ({ socket, io }: IInIt) => {
       clearForOnePlayer(table)
     }
   })
-  // socket.on(PokerActions.LEAVE_TABLE, async ({ tableId, player }) => {
-  //   await db.player.delete({
-  //     where: {
-  //       id: player.id,
-  //       tableId: tableId,
-  //     },
-  //   })
-  // })
-  // function broadcastToTable(table: TableWithPlayers, message = null, from = null) {
-  //   for (let i = 0; i < table?.players.length; i++) {
-  //     let socketId = table.players[i].socketId;
-  //     let tableCopy = hideOpponentCards(table, socketId);
-  //     io.to(socketId).emit(TABLE_UPDATED, {
-  //       table: tableCopy,
-  //       message,
-  //       from,
-  //     });
-  //   }
-  // }
+
+  socket.on(PokerActions.FOLD, async ({ tableId, participantId }) => {
+    const table = await getTableById(tableId)
+
+    if (!table) return
+
+    const participant = await handlePacticipantFold(participantId)
+
+    if (!participant) return
+
+    broadcastToTable(table, `player ${participant.player.user.username} folded`)
+
+    changeTurnAndBroadcast(table)
+  })
+
+  socket.on(PokerActions.CHECK, async ({ tableId, participantId }) => {
+    const table = await getTableById(tableId)
+
+    if (!table) return
+
+    const participant = await handlePacticipantCheck(participantId)
+
+    if (!participant) return
+
+    broadcastToTable(
+      table,
+      `player ${participant.player.user.username} checked`
+    )
+
+    changeTurnAndBroadcast(table)
+  })
+
+  socket.on(PokerActions.RAISE, async ({ tableId, participantId, amount }) => {
+    const table = await getTableById(tableId)
+
+    if (!table) return
+
+    const participant = await handlePacticipantRaise(participantId)
+
+    if (!participant) return
+
+    broadcastToTable(
+      table,
+      `player ${participant.player.user.username} raised ${amount}`
+    )
+
+    changeTurnAndBroadcast(table)
+  })
+
+  socket.on(PokerActions.CALL, async ({ tableId, participantId }) => {
+    const table = await getTableById(tableId)
+
+    if (!table) return
+
+    const participant = await handlePacticipantCall(participantId)
+
+    if (!participant) return
+
+    broadcastToTable(table, `player ${participant.player.user.username} called`)
+
+    changeTurnAndBroadcast(table)
+  })
   // socket.on(FOLD, tableId => {
   //   let table = tables[tableId]
   //   let res = table.handleFold(socket.id)
@@ -221,14 +272,24 @@ const init = ({ socket, io }: IInIt) => {
   //     tables[Object.keys(tables)[i]].removePlayer(socketId)
   //   }
   // }
-  function initNewHand(table: TableWithPlayers) {
+  function initNewMatch(table: TableWithPlayers) {
     if (table.players.length > 1) {
-      broadcastToTable(table, '---New hand starting in 5 seconds---')
+      broadcastToTable(table, '---New match starting in 5 seconds---')
     }
-    setTimeout(() => {
+    setTimeout(async () => {
       // table.clearWinMessages();
-      // table.startHand();
-      broadcastToTable(table, '--- New hand started ---')
+      const { match, player } = await createMatch(table)
+      broadcastToTable(table, '--- New match started ---')
+      for (let i = 0; i < table.players.length; i++) {
+        let socketId = table.players[i].socketId as string
+
+        // let tableCopy = hideOpponentCards(table, socketId)
+        io.to(socketId).emit(PokerActions.MATCH_STARTED, {
+          tableId: table.id,
+          match,
+          player,
+        })
+      }
     }, 5000)
   }
 
@@ -239,11 +300,9 @@ const init = ({ socket, io }: IInIt) => {
   ) {
     for (let i = 0; i < table.players.length; i++) {
       let socketId = table.players[i].socketId as string
-
       console.log(socketId)
       // let tableCopy = hideOpponentCards(table, socketId)
-      io.to(socketId).emit(PokerActions.TABLES_UPDATED, {
-        table,
+      io.to(socketId).emit(PokerActions.TABLE_MESSAGE, {
         message,
         from,
       })
@@ -275,6 +334,25 @@ const init = ({ socket, io }: IInIt) => {
       // table.resetBoardAndPot()
       broadcastToTable(table, 'Waiting for more players')
     }, 5000)
+  }
+
+  function changeTurnAndBroadcast(table: TableWithPlayers) {
+    setTimeout(async () => {
+      const nextPlayer = await changeTurn(table)
+
+      for (let i = 0; i < table.players.length; i++) {
+        let socketId = table.players[i].socketId as string
+        // let tableCopy = hideOpponentCards(table, socketId)
+        io.to(socketId).emit(PokerActions.CHANGE_TURN, {
+          player: nextPlayer,
+        })
+      }
+
+      // end match
+      // if (table.handOver) {
+      //   initNewHand(table);
+      // }
+    }, 1000)
   }
   // function hideOpponentCards(table, socketId) {
   //   let tableCopy = JSON.parse(JSON.stringify(table))

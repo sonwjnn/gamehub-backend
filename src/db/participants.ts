@@ -21,3 +21,95 @@ export const getParticipantById = async (id: string) => {
     return null
   }
 }
+
+export const handlePacticipantFold = async (id: string) => {
+  try {
+    const participant = await db.participant.update({
+      where: {
+        id,
+      },
+      data: {
+        isFolded: true,
+      },
+      include: {
+        player: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+    return participant
+  } catch (error) {
+    return null
+  }
+}
+
+export const handlePacticipantRaise = async (id: string) => {
+  try {
+    const participant = await db.participant.update({
+      where: {
+        id,
+      },
+      data: {
+        isFolded: true,
+      },
+      include: {
+        player: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+    return participant
+  } catch (error) {
+    return null
+  }
+}
+
+export const handlePacticipantCall = async (id: string) => {
+  try {
+    const participant = await db.participant.update({
+      where: {
+        id,
+      },
+      data: {
+        isFolded: true,
+      },
+      include: {
+        player: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+    return participant
+  } catch (error) {
+    return null
+  }
+}
+
+export const handlePacticipantCheck = async (id: string) => {
+  try {
+    const participant = await db.participant.update({
+      where: {
+        id,
+      },
+      data: {
+        isChecked: true,
+      },
+      include: {
+        player: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+    return participant
+  } catch (error) {
+    return null
+  }
+}

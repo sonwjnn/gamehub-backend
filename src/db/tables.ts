@@ -1,5 +1,6 @@
 import { db } from '../lib/db'
 import { Prisma } from '@prisma/client'
+import { TableWithPlayers } from '../types'
 
 // Table Actions
 export const getTables = async () => {
@@ -56,37 +57,48 @@ export const updateTableById = async (
   }
 }
 
-export const startHand = async (tableId: string) => {
+export const changeTurn = async (table: TableWithPlayers) => {
   try {
-    const table = await db.table.findUnique({
-      where: {
-        id: tableId,
-      },
-      include: {
-        players: true,
-      },
-    })
-
     if (!table) {
       throw new Error('Table not found')
     }
 
-    const players = table.players
+    const currentPlayer = table.players.find(player => player.isTurn)
 
-    if (players.length < 2) {
-      throw new Error('Not enough players')
+    if (!currentPlayer) {
+      throw new Error('Current player not found')
     }
 
-    const tableUpdate = await db.table.update({
+    const nextPlayerIndex =
+      table.players.findIndex(player => player.id === currentPlayer.id) + 1
+
+    const nextPlayer =
+      nextPlayerIndex === table.players.length
+        ? table.players[0]
+        : table.players[nextPlayerIndex]
+
+    await db.player.update({
       where: {
-        id: tableId,
+        id: currentPlayer.id,
       },
       data: {
-        // status: 'IN_PROGRESS',
+        isTurn: false,
       },
     })
 
-    return tableUpdate
+    const updatedNextPlayer = await db.player.update({
+      where: {
+        id: nextPlayer.id,
+      },
+      data: {
+        isTurn: true,
+      },
+      include: {
+        user: true,
+      },
+    })
+
+    return updatedNextPlayer
   } catch (error) {
     throw new Error('Internal Error')
   }

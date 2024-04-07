@@ -101,7 +101,6 @@ model Card {
   suit CardSuit
 
   decks   Deck[]
-  actions Action[]
   matches Match[]
 
   participantOne Participant[] @relation("CardOne")
@@ -141,6 +140,7 @@ model Player {
 
   messages     Message[]
   participants Participant[]
+  matches      Match[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 
@@ -244,68 +244,67 @@ model Withdraw {
 }
 
 // Action table
-model Action {
-  id             String       @id @default(cuid())
-  dealId         String       @map(name: "deal_id")
-  deal           Deal         @relation(fields: [dealId], references: [id])
-  cardId         String?      @map(name: "card_id")
-  card           Card?        @relation(fields: [cardId], references: [id])
-  participantId  String?      @map(name: "participant_id")
-  participant    Participant? @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  actionTypeId   String       @map(name: "action_type_id")
-  actionType     ActionType   @relation(fields: [actionTypeId], references: [id])
-  actionOrder    Int          @map(name: "action_order")
-  actionNotation String?      @map(name: "action_notation")
+// model Action {
+//   id             String       @id @default(cuid())
+//   dealId         String       @map(name: "deal_id")
+//   deal           Deal         @relation(fields: [dealId], references: [id])
+//   cardId         String?      @map(name: "card_id")
+//   card           Card?        @relation(fields: [cardId], references: [id])
+//   participantId  String?      @map(name: "participant_id")
+//   participant    Participant? @relation(fields: [participantId], references: [id], onDelete: Cascade)
+//   actionTypeId   String       @map(name: "action_type_id")
+//   actionType     ActionType   @relation(fields: [actionTypeId], references: [id])
+//   actionOrder    Int          @map(name: "action_order")
+//   actionNotation String?      @map(name: "action_notation")
 
-  @@unique([dealId, actionOrder])
-  @@map(name: "action")
-}
+//   @@unique([dealId, actionOrder])
+//   @@map(name: "action")
+// }
 
 // ActionType table
-model ActionType {
-  id   String @id @default(cuid())
-  name String
+// model ActionType {
+//   id   String @id @default(cuid())
+//   name String
 
-  actions Action[]
+//   actions Action[]
 
-  @@map(name: "action_type")
-}
+//   @@map(name: "action_type")
+// }
 
 // CardInDeck table
 
-// Deal table
-model Deal {
-  id      String @id @default(cuid())
-  matchId String @map(name: "match_id")
-  match   Match  @relation(fields: [matchId], references: [id])
+// // Deal table
+// model Deal {
+//   id      String @id @default(cuid())
+//   matchId String @map(name: "match_id")
+//   match   Match  @relation(fields: [matchId], references: [id])
 
-  dealOrders DealOrder[]
-  actions    Action[]
+//   dealOrders DealOrder[]
 
-  startTime     DateTime  @map(name: "start_time")
-  endTime       DateTime? @map(name: "end_time")
-  moveTimeLimit String?   @map(name: "move_time_limit")
-  dealResult    String?   @map(name: "deal_result")
+//   startTime     DateTime  @map(name: "start_time")
+//   endTime       DateTime? @map(name: "end_time")
+//   moveTimeLimit String?   @map(name: "move_time_limit")
+//   dealResult    String?   @map(name: "deal_result")
 
-  @@unique([matchId])
-  @@map(name: "deal")
-}
+//   @@unique([matchId])
+//   @@map(name: "deal")
+// }
 
-// DealOrder table
-model DealOrder {
-  id            String      @id @default(cuid())
-  participantId String      @map(name: "participant_id")
-  participant   Participant @relation(fields: [participantId], references: [id])
-  dealId        String      @map(name: "deal_id")
-  deal          Deal        @relation(fields: [dealId], references: [id])
-  playerOrder   String
-  dealResult    String?     @map(name: "deal_result")
-  score         Float?
+// // DealOrder table
+// model DealOrder {
+//   id            String      @id @default(cuid())
+//   participantId String      @map(name: "participant_id")
+//   participant   Participant @relation(fields: [participantId], references: [id])
+//   dealId        String      @map(name: "deal_id")
+//   deal          Deal        @relation(fields: [dealId], references: [id])
+//   playerOrder   String
+//   dealResult    String?     @map(name: "deal_result")
+//   score         Float?
 
-  @@unique([participantId, dealId])
-  @@unique([dealId, playerOrder])
-  @@map(name: "deal_order")
-}
+//   @@unique([participantId, dealId])
+//   @@unique([dealId, playerOrder])
+//   @@map(name: "deal_order")
+// }
 
 model Deck {
   id String @id @default(cuid())
@@ -342,13 +341,20 @@ model Match {
   deck          Deck      @relation(fields: [deckId], references: [id])
   board         Card[]
 
+  pot     Int    @default(0)
+  mainPot Int    @default(0) @map(name: "main_pot")
+  sidePot String @default("[]") @map(name: "side_pot")
+
   decksUsed         Int?    @default(1) @map(name: "decks_used")
   unitId            String? @map(name: "unit_id")
   unit              Unit?   @relation(fields: [unitId], references: [id])
-  deals             Deal[]
+  // deals             Deal[]
   entranceFee       Float?  @map(name: "entrance_fee")
   victoryConditions String? @map(name: "victory_conditions")
   matchResult       String? @map(name: "match_result")
+
+  buttonId String? @map(name: "button_id")
+  button   Player? @relation(fields: [buttonId], references: [id])
 
   participants Participant[]
 
@@ -368,9 +374,10 @@ model Participant {
   cardTwoId String? @map(name: "card_two_id")
   cardTwo   Card?   @relation("CardTwo", fields: [cardTwoId], references: [id])
 
-  // dealOrders DealOrder[]
-  actions   Action[]
-  DealOrder DealOrder[]
+  bet        Int     @default(0)
+  isChecked  Boolean @default(true)
+  isFolded   Boolean @default(true)
+  lastAction String  @default("") @map(name: "last_action")
 
   @@unique([playerId, matchId])
   @@map(name: "participant")

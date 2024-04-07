@@ -1,4 +1,4 @@
-import { Player, Table, User } from '@prisma/client'
+import { Card, Match, Participant, Player, Table, User } from '@prisma/client'
 import { Server as NetServer, Socket } from 'net'
 import { Server as SocketIOServer } from 'socket.io'
 import { PokerActions } from './pokergame/actions'
@@ -43,14 +43,29 @@ export interface ServerToClientEvents {
     tableId: string
     player: Player
   }) => void
-  [PokerActions.TABLES_UPDATED]: ({
-    table,
+  [PokerActions.TABLE_MESSAGE]: ({
     message,
     from,
   }: {
-    table: Table
     message: string
     from: any
+  }) => void
+  [PokerActions.MATCH_STARTED]: ({
+    tableId,
+    match,
+    player,
+  }: {
+    tableId: string
+    match: MatchWithParticipants
+    player: PlayerWithUser
+  }) => void
+  [PokerActions.CHANGE_TURN]: ({ player }: { player: PlayerWithUser }) => void
+  [PokerActions.FOLD]: ({
+    tableId,
+    participantId,
+  }: {
+    tableId: string
+    participantId: string
   }) => void
 }
 
@@ -85,14 +100,34 @@ export interface ClientToServerEvents {
     tableId: string
     player: Player
   }) => void
-  [PokerActions.FOLD]: (tableId: string) => void
-  [PokerActions.CHECK]: (tableId: string) => void
-  [PokerActions.CALL]: (tableId: string) => void
+  [PokerActions.FOLD]: ({
+    tableId,
+    participantId,
+  }: {
+    tableId: string
+    participantId: string
+  }) => void
+  [PokerActions.CHECK]: ({
+    tableId,
+    participantId,
+  }: {
+    tableId: string
+    participantId: string
+  }) => void
+  [PokerActions.CALL]: ({
+    tableId,
+    participantId,
+  }: {
+    tableId: string
+    participantId: string
+  }) => void
   [PokerActions.RAISE]: ({
     tableId,
+    participantId,
     amount,
   }: {
     tableId: string
+    participantId: string
     amount: number
   }) => void
 }
@@ -107,3 +142,13 @@ export interface SocketData {
 }
 
 export type TableWithPlayers = Table & { players: PlayerWithUser[] }
+
+export type ParticipantWithCards = Participant & {
+  cardOne: Card
+  cardTwo: Card
+}
+
+export type MatchWithParticipants = Match & {
+  participants: ParticipantWithCards[]
+  board: Card[]
+}
