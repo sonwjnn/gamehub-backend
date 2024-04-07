@@ -10,6 +10,7 @@ import banks from './banks'
 import withdraws from './withdraws'
 import recharges from './recharges'
 import socket from './socket'
+import matches from './matches'
 
 const router = express.Router()
 
@@ -25,6 +26,7 @@ export default (): express.Router => {
   router.use('/api/withdraws', withdraws())
   router.use('/api/recharges', recharges())
   router.use('/api/socket', socket())
+  router.use('/api/matches', matches())
 
   return router
 }

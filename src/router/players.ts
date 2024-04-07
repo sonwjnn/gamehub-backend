@@ -9,6 +9,10 @@ export default (): express.Router => {
   router.get('/', playerController.getAllPlayers)
   router.get('/:id', playerController.getPlayer)
   router.get('/:tableId/:userId', playerController.getCurrentPlayerOfTable)
+  router.get(
+    '/table/user/:userId',
+    playerController.getCurrentPlayerWithoutTable
+  )
   router.post('/', playerController.createPlayer)
   router.delete('/:id', playerController.removePlayer)
   router.put('/:id', requestHandler.validate, playerController.updatePlayerById)

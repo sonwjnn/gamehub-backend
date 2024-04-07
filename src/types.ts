@@ -35,12 +35,22 @@ export interface ServerToClientEvents {
     tableId: string
     player: Player
   }) => void
+
   [PokerActions.LEAVE_TABLE]: ({
     tableId,
     player,
   }: {
     tableId: string
     player: Player
+  }) => void
+  [PokerActions.TABLES_UPDATED]: ({
+    table,
+    message,
+    from,
+  }: {
+    table: Table
+    message: string
+    from: any
   }) => void
 }
 
@@ -53,6 +63,20 @@ export interface ClientToServerEvents {
   }: {
     tableId: string
     player: Player
+  }) => void
+  [PokerActions.TABLE_JOINED]: ({
+    tableId,
+    player,
+  }: {
+    tableId: string
+    player: PlayerWithUser
+  }) => void
+  [PokerActions.TABLE_LEFT]: ({
+    tableId,
+    player,
+  }: {
+    tableId: string
+    player: PlayerWithUser
   }) => void
   [PokerActions.LEAVE_TABLE]: ({
     tableId,
@@ -81,3 +105,5 @@ export interface SocketData {
   name: string
   age: number
 }
+
+export type TableWithPlayers = Table & { players: PlayerWithUser[] }

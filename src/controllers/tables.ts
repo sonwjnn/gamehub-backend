@@ -33,11 +33,23 @@ const deleteTableById = async (req: Request, res: Response) => {
 const updateTable = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
+    const { minBuyIn, maxBuyIn, name } = req.body
 
-    const table = await updateTableById(id, req.body)
+    const table = await db.table.update({
+      where: {
+        id,
+      },
+      data: {
+        minBuyIn,
+        maxBuyIn,
+        name,
+      },
+    })
 
     responseHandler.ok(res, table)
   } catch (error) {
+    console.log(error)
+
     responseHandler.error(res)
   }
 }

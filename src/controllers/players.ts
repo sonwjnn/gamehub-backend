@@ -20,10 +20,24 @@ const removePlayer = async (req: Request, res: Response) => {
     const { id } = req.params
     const { tableId } = req.query
 
+    const playerExisting = await db.player.findUnique({
+      where: {
+        id,
+        tableId: tableId as string,
+      },
+    })
+
+    if (!playerExisting) {
+      return responseHandler.badrequest(res, 'Player not found')
+    }
+
     const player = await db.player.delete({
       where: {
         id,
         tableId: tableId as string,
+      },
+      include: {
+        user: true,
       },
     })
 
@@ -31,6 +45,7 @@ const removePlayer = async (req: Request, res: Response) => {
 
     responseHandler.ok(res)
   } catch (error) {
+    console.log(error)
     responseHandler.error(res)
   }
 }
@@ -65,7 +80,7 @@ const updatePlayerById = async (req: Request, res: Response) => {
 
 const createPlayer = async (req: Request, res: Response) => {
   try {
-    const { tableId, userId } = req.body
+    const { tableId, userId, socketId } = req.body
 
     const isExistingPlayer = await db.player.findFirst({
       where: {
@@ -82,6 +97,7 @@ const createPlayer = async (req: Request, res: Response) => {
       data: {
         tableId,
         userId,
+        socketId,
       },
       include: {
         user: true,
@@ -125,6 +141,22 @@ const getCurrentPlayerOfTable = async (req: Request, res: Response) => {
     responseHandler.error(res)
   }
 }
+
+const getCurrentPlayerWithoutTable = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params
+
+    const player = await db.player.findFirst({
+      where: {
+        userId,
+      },
+    })
+
+    responseHandler.ok(res, player)
+  } catch (error) {
+    responseHandler.error(res)
+  }
+}
 export default {
   getPlayer,
   createPlayer,
@@ -132,4 +164,5 @@ export default {
   removePlayer,
   updatePlayerById,
   getCurrentPlayerOfTable,
+  getCurrentPlayerWithoutTable,
 }
