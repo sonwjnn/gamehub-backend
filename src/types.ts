@@ -53,13 +53,19 @@ export interface ServerToClientEvents {
   [PokerActions.MATCH_STARTED]: ({
     tableId,
     match,
-    player,
+    playerId,
   }: {
     tableId: string
     match: MatchWithParticipants
-    player: PlayerWithUser
+    playerId: string
   }) => void
-  [PokerActions.CHANGE_TURN]: ({ player }: { player: PlayerWithUser }) => void
+  [PokerActions.CHANGE_TURN]: ({
+    match,
+    playerId,
+  }: {
+    match: Match | null
+    playerId: string
+  }) => void
   [PokerActions.FOLD]: ({
     tableId,
     participantId,
@@ -152,3 +158,5 @@ export type MatchWithParticipants = Match & {
   participants: ParticipantWithCards[]
   board: Card[]
 }
+
+export type ParticipantWithPlayer = Participant & { player: PlayerWithUser }

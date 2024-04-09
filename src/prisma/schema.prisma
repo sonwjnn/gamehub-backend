@@ -60,6 +60,8 @@ model Table {
   maxBuyIn                  Int     @map(name: "max_buy_in")
   possibleVictoryConditions String? @map(name: "possible_victory_conditions")
 
+  handOver Boolean @default(true) @map(name: "hand_over")
+
   decks Deck[]
   units TableUnit[]
 
@@ -353,6 +355,12 @@ model Match {
   victoryConditions String? @map(name: "victory_conditions")
   matchResult       String? @map(name: "match_result")
 
+  isPreFlop  Boolean @default(false) @map(name: "is_pre_flop")
+  isFlop     Boolean @default(false) @map(name: "is_flop")
+  isTurn     Boolean @default(false) @map(name: "is_turn")
+  isRiver    Boolean @default(false) @map(name: "is_river")
+  isShowdown Boolean @default(false) @map(name: "is_showdown")
+
   buttonId String? @map(name: "button_id")
   button   Player? @relation(fields: [buttonId], references: [id])
 
@@ -376,7 +384,7 @@ model Participant {
 
   bet        Int     @default(0)
   isChecked  Boolean @default(true)
-  isFolded   Boolean @default(true)
+  isFolded   Boolean @default(false)
   lastAction String  @default("") @map(name: "last_action")
 
   @@unique([playerId, matchId])

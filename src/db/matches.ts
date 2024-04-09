@@ -122,8 +122,9 @@ export const createMatch = async (table: TableWithPlayers) => {
       },
     })) as MatchWithParticipants
 
-    return { match: newMatch, player: updatedPlayer }
+    return { match: newMatch, playerId: updatedPlayer.id }
   } catch (error) {
+    console.log(error)
     throw new Error('Match Internal Error')
   }
 }

@@ -19,11 +19,11 @@ import { Server } from 'socket.io'
 
 import jwt, { JwtPayload, VerifyErrors } from 'jsonwebtoken'
 
-import { User, Player, Table } from '@prisma/client'
+import { User, Player, Table, Participant } from '@prisma/client'
 import { jwtVerify } from '../helpers'
 import { PokerActions } from '../pokergame/actions'
 import { changeTurn, getTableById } from '../db/tables'
-import { createMatch } from '../db/matches'
+import { createMatch, getMatchById } from '../db/matches'
 
 async function getCurrentPlayers() {
   try {
@@ -109,7 +109,7 @@ const init = ({ socket, io }: IInIt) => {
 
     broadcastToTable(table, `player ${participant.player.user.username} folded`)
 
-    changeTurnAndBroadcast(table)
+    changeTurnAndBroadcast(table, participant)
   })
 
   socket.on(PokerActions.CHECK, async ({ tableId, participantId }) => {
@@ -126,7 +126,7 @@ const init = ({ socket, io }: IInIt) => {
       `player ${participant.player.user.username} checked`
     )
 
-    changeTurnAndBroadcast(table)
+    changeTurnAndBroadcast(table, participant)
   })
 
   socket.on(PokerActions.RAISE, async ({ tableId, participantId, amount }) => {
@@ -143,7 +143,7 @@ const init = ({ socket, io }: IInIt) => {
       `player ${participant.player.user.username} raised ${amount}`
     )
 
-    changeTurnAndBroadcast(table)
+    changeTurnAndBroadcast(table, participant)
   })
 
   socket.on(PokerActions.CALL, async ({ tableId, participantId }) => {
@@ -157,7 +157,7 @@ const init = ({ socket, io }: IInIt) => {
 
     broadcastToTable(table, `player ${participant.player.user.username} called`)
 
-    changeTurnAndBroadcast(table)
+    changeTurnAndBroadcast(table, participant)
   })
   // socket.on(FOLD, tableId => {
   //   let table = tables[tableId]
@@ -278,7 +278,7 @@ const init = ({ socket, io }: IInIt) => {
     }
     setTimeout(async () => {
       // table.clearWinMessages();
-      const { match, player } = await createMatch(table)
+      const { match, playerId } = await createMatch(table)
       broadcastToTable(table, '--- New match started ---')
       for (let i = 0; i < table.players.length; i++) {
         let socketId = table.players[i].socketId as string
@@ -287,7 +287,7 @@ const init = ({ socket, io }: IInIt) => {
         io.to(socketId).emit(PokerActions.MATCH_STARTED, {
           tableId: table.id,
           match,
-          player,
+          playerId,
         })
       }
     }, 5000)
@@ -335,15 +335,21 @@ const init = ({ socket, io }: IInIt) => {
     }, 5000)
   }
 
-  function changeTurnAndBroadcast(table: TableWithPlayers) {
+  function changeTurnAndBroadcast(
+    table: TableWithPlayers,
+    participant: Participant
+  ) {
     setTimeout(async () => {
-      const nextPlayer = await changeTurn(table)
+      const playerId = await changeTurn(table, participant)
+
+      const currentMatch = await getMatchById(participant.matchId)
 
       for (let i = 0; i < table.players.length; i++) {
         let socketId = table.players[i].socketId as string
         // let tableCopy = hideOpponentCards(table, socketId)
         io.to(socketId).emit(PokerActions.CHANGE_TURN, {
-          player: nextPlayer,
+          match: currentMatch,
+          playerId,
         })
       }
 
