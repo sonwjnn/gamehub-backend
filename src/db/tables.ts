@@ -1,7 +1,13 @@
 import { db } from '../lib/db'
-import { Participant, Prisma } from '@prisma/client'
-import { ParticipantWithPlayer, TableWithPlayers } from '../types'
+import { Card, Participant, Prisma } from '@prisma/client'
+import {
+  ParticipantWithPlayer,
+  ParticipantWithPlayerAndCards,
+  TableWithPlayers,
+} from '../types'
 import { PokerActions } from '../pokergame/actions'
+import lodash from 'lodash'
+import { getWinner } from '../utils/poker'
 
 // Table Actions
 export const getTables = async () => {
@@ -70,6 +76,8 @@ const getUnfoldedParticipants = async (currentParticipant: Participant) => {
           user: true,
         },
       },
+      cardOne: true,
+      cardTwo: true,
     },
   })
 
@@ -243,6 +251,43 @@ const resetBetsAndActions = async (participant: Participant) => {
   }
 }
 
+const determineWinner = async (participant: Participant) => {
+  try {
+    const unfoldedParticipants = (await getUnfoldedParticipants(
+      participant
+    )) as ParticipantWithPlayerAndCards[]
+
+    if (
+      !Array.isArray(unfoldedParticipants) ||
+      unfoldedParticipants.length === 0
+    ) {
+      throw new Error('No participants found')
+    }
+
+    // const findHandOwner = (cards: Card[]) => {
+    //   const participant = formattedPaticipants.find(participant =>
+    //     lodash.isEqual(participant.cards.sort(), cards)
+    //   )
+    //   return participant?.id
+    // }
+
+    const winner = (await getWinner(
+      unfoldedParticipants
+    )) as ParticipantWithPlayerAndCards
+
+    if (winner) {
+      console.log(winner?.player?.user?.username)
+    }
+
+    // const solverWinners = Hand.winners(
+    //   participants.map((p) => Hand.solve(p.solverCards))
+    // );
+  } catch (error) {
+    console.log(error)
+    throw new Error('Internal Error')
+  }
+}
+
 const dealNextStreet = async (participant: Participant) => {
   try {
     await resetBetsAndActions(participant)
@@ -308,8 +353,11 @@ const dealNextStreet = async (participant: Participant) => {
           isShowdown: true,
         },
       })
+
+      await determineWinner(participant)
     }
   } catch (error) {
+    console.log(error)
     throw new Error('Internal Error')
   }
 }

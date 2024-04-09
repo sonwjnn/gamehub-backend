@@ -160,3 +160,7 @@ export type MatchWithParticipants = Match & {
 }
 
 export type ParticipantWithPlayer = Participant & { player: PlayerWithUser }
+
+export type ParticipantWithPlayerAndCards = ParticipantWithCards & {
+  player: PlayerWithUser
+}
