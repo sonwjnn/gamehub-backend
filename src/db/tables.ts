@@ -1,13 +1,12 @@
 import { db } from '../lib/db'
-import { Card, Participant, Prisma } from '@prisma/client'
+import { Participant, Player, Prisma } from '@prisma/client'
 import {
   ParticipantWithPlayer,
   ParticipantWithPlayerAndCards,
   TableWithPlayers,
 } from '../types'
 import { PokerActions } from '../pokergame/actions'
-import lodash from 'lodash'
-import { getWinner } from '../utils/poker'
+import { getWinner } from './poker'
 
 // Table Actions
 export const getTables = async () => {
@@ -101,7 +100,7 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
 
     await db.player.update({
       where: {
-        id: winner.player.id,
+        id: winner.playerId,
       },
       data: {
         isTurn: false,
@@ -134,8 +133,20 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
       },
     })
 
+    await db.match.update({
+      where: {
+        id: winner.matchId,
+      },
+      data: {
+        pot: 0,
+        winnerId: winner.playerId,
+        isShowdown: true,
+      },
+    })
+
     await endHand(currentMatch.tableId)
   } catch (error) {
+    console.log(error)
     throw new Error('Table Error')
   }
 }
@@ -251,6 +262,32 @@ const resetBetsAndActions = async (participant: Participant) => {
   }
 }
 
+const determineMainPotWinner = async (participant: Participant) => {
+  try {
+    const winnerParticipant = await determineWinner(participant)
+
+    if (!winnerParticipant) {
+      return null
+    }
+
+    const updatedMatch = await db.match.update({
+      where: {
+        id: participant.matchId,
+      },
+      data: {
+        isShowdown: true,
+        winnerId: winnerParticipant.playerId,
+        pot: 0,
+      },
+    })
+
+    await endHand(updatedMatch.tableId)
+  } catch (error) {
+    console.log(error)
+    throw new Error('Internal Error')
+  }
+}
+
 const determineWinner = async (participant: Participant) => {
   try {
     const unfoldedParticipants = (await getUnfoldedParticipants(
@@ -261,27 +298,34 @@ const determineWinner = async (participant: Participant) => {
       !Array.isArray(unfoldedParticipants) ||
       unfoldedParticipants.length === 0
     ) {
-      throw new Error('No participants found')
+      return null
     }
 
-    // const findHandOwner = (cards: Card[]) => {
-    //   const participant = formattedPaticipants.find(participant =>
-    //     lodash.isEqual(participant.cards.sort(), cards)
-    //   )
-    //   return participant?.id
-    // }
+    const winnerIds = await getWinner(unfoldedParticipants)
 
-    const winner = (await getWinner(
-      unfoldedParticipants
-    )) as ParticipantWithPlayerAndCards
+    if (!winnerIds?.length) return null
 
-    if (winner) {
-      console.log(winner?.player?.user?.username)
-    }
+    // TODO: Hoa Bai
+    const winnerParticipant = await db.participant.update({
+      where: {
+        id: winnerIds[0] as string,
+      },
+      data: {
+        bet: 0,
+        lastAction: 'WINNER',
+      },
+    })
 
-    // const solverWinners = Hand.winners(
-    //   participants.map((p) => Hand.solve(p.solverCards))
-    // );
+    await db.player.update({
+      where: {
+        id: winnerParticipant.playerId,
+      },
+      data: {
+        isTurn: false,
+      },
+    })
+
+    return winnerParticipant
   } catch (error) {
     console.log(error)
     throw new Error('Internal Error')
@@ -345,16 +389,7 @@ const dealNextStreet = async (participant: Participant) => {
       currentMatch.isFlop &&
       currentMatch.isPreFlop
     ) {
-      await db.match.update({
-        where: {
-          id: participant.matchId,
-        },
-        data: {
-          isShowdown: true,
-        },
-      })
-
-      await determineWinner(participant)
+      await determineMainPotWinner(participant)
     }
   } catch (error) {
     console.log(error)
@@ -384,19 +419,55 @@ const updatePlayerTurn = async (table: TableWithPlayers, playerId: string) => {
   }
 }
 
+const findNextPlayerUnfolded = (
+  table: TableWithPlayers,
+  currentPlayer: Player,
+  unfoldedParticipants: Participant[]
+) => {
+  const sortedOrderByTablePlayers = unfoldedParticipants.sort((a, b) => {
+    const playerAIndex = table.players.findIndex(
+      player => player.id === a.playerId
+    )
+    const playerBIndex = table.players.findIndex(
+      player => player.id === b.playerId
+    )
+
+    if (playerAIndex > playerBIndex) {
+      return 1
+    } else if (playerAIndex < playerBIndex) {
+      return -1
+    } else {
+      return 0
+    }
+  })
+
+  //normal case
+  const nextPlayerIndex =
+    sortedOrderByTablePlayers.findIndex(
+      player => player.playerId === currentPlayer.id
+    ) + 1
+
+  const nextPlayer =
+    nextPlayerIndex === unfoldedParticipants.length
+      ? unfoldedParticipants[0]
+      : unfoldedParticipants[nextPlayerIndex]
+
+  return nextPlayer.playerId
+}
+
 export const changeTurn = async (
   table: TableWithPlayers,
   participant: Participant
 ) => {
   try {
     if (!table) {
-      throw new Error('Table not found')
+      return ''
     }
 
     const currentPlayer = table.players.find(player => player.isTurn)
 
     if (!currentPlayer) {
-      throw new Error('Current player not found')
+      return ''
     }
 
     const unfoldedParticipants = await getUnfoldedParticipants(participant)
@@ -411,22 +482,31 @@ export const changeTurn = async (
     if (isComplete) {
       await dealNextStreet(participant)
 
-      const updatedNextPlayer = await updatePlayerTurn(
-        table,
-        table.players[0].id
-      )
+      const currentTable = await db.table.findUnique({
+        where: {
+          id: table.id,
+        },
+      })
 
-      return updatedNextPlayer.id
+      if (!currentTable?.handOver) {
+        const nextPlayerId = findNextPlayerUnfolded(
+          table,
+          currentPlayer,
+          unfoldedParticipants
+        )
+
+        await updatePlayerTurn(table, nextPlayerId)
+
+        return nextPlayerId
+      }
+      return ''
     }
 
-    //normal case
-    const nextPlayerIndex =
-      table.players.findIndex(player => player.id === currentPlayer.id) + 1
-
-    const nextPlayer =
-      nextPlayerIndex === table.players.length
-        ? table.players[0]
-        : table.players[nextPlayerIndex]
+    const nextPlayerId = findNextPlayerUnfolded(
+      table,
+      currentPlayer,
+      unfoldedParticipants
+    )
 
     await db.player.update({
       where: {
@@ -439,7 +519,7 @@ export const changeTurn = async (
 
     const updatedNextPlayer = await db.player.update({
       where: {
-        id: nextPlayer.id,
+        id: nextPlayerId,
       },
       data: {
         isTurn: true,

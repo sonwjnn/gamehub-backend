@@ -1,5 +1,5 @@
 import { Card } from '@prisma/client'
-import { getMatchById } from '../db/matches'
+import { getMatchById } from './matches'
 import { ParticipantWithCards, ParticipantWithPlayerAndCards } from '../types'
 
 interface Hand {
@@ -34,6 +34,33 @@ const formattedCardsForPokerSolver = (card: CustomCard) => {
     CLUBS: 'C',
     SPADES: 'S',
     DIAMONDS: 'D',
+  }
+
+  return { ...card, rank: rankMap[card.rank], suit: suitMap[card.suit] }
+}
+
+const unformatCardsForPokerSolver = (card: CustomCard) => {
+  const rankMap: { [key: string]: string } = {
+    '2': 'TWO',
+    '3': 'THREE',
+    '4': 'FOUR',
+    '5': 'FIVE',
+    '6': 'SIX',
+    '7': 'SEVEN',
+    '8': 'EIGHT',
+    '9': 'NINE',
+    '10': 'TEN',
+    '11': 'J',
+    '12': 'Q',
+    '13': 'K',
+    '1': 'A',
+  }
+
+  const suitMap: { [key: string]: string } = {
+    H: 'HEARTS',
+    C: 'CLUBS',
+    S: 'SPADES',
+    D: 'DIAMONDS',
   }
 
   return { ...card, rank: rankMap[card.rank], suit: suitMap[card.suit] }
@@ -92,7 +119,10 @@ export const getWinner = async (
   if (ties.length > 0) {
     return ties
   }
-  return winner
+
+  console.log('winner: ', winner.id)
+
+  return [winner.id]
 }
 
 const sortHand = (cards: CustomCard[]) => {
@@ -165,9 +195,12 @@ const forwardCompareRanks = (hand1: Hand, hand2: Hand) => {
   // Returns the same values as compareHands
   // Assumes same input as compareHands
   for (let i = 0; i < 5; i++) {
-    if (+hand1.cards[i].rank > +hand2.cards[i].rank) {
+    const rankHand1 = +hand1.cards[i].rank === 1 ? 14 : +hand1.cards[i].rank
+    const rankHand2 = +hand2.cards[i].rank === 1 ? 14 : +hand2.cards[i].rank
+
+    if (rankHand1 > rankHand2) {
       return 0
-    } else if (+hand1.cards[i].rank < +hand2.cards[i].rank) {
+    } else if (rankHand1 < rankHand2) {
       return 1
     }
   }
@@ -182,9 +215,12 @@ const backwardCompareRanks = (hand1: Hand, hand2: Hand) => {
   // Assumes same input as compareHands
   let check = -1
   for (let i = 4; i >= 0; i--) {
-    if (+hand1.cards[i].rank > +hand2.cards[i].rank) {
+    const rankHand1 = +hand1.cards[i].rank === 1 ? 14 : +hand1.cards[i].rank
+    const rankHand2 = +hand2.cards[i].rank === 1 ? 14 : +hand2.cards[i].rank
+
+    if (rankHand1 > rankHand2) {
       check = 0
-    } else if (+hand1.cards[i].rank < +hand2.cards[i].rank) {
+    } else if (rankHand1 < rankHand2) {
       check = 1
     }
   }

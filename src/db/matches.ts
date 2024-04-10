@@ -37,6 +37,10 @@ export const createMatch = async (table: TableWithPlayers) => {
   try {
     const participants = table.players.map(player => player.id)
 
+    if (!participants.length) {
+      return { match: null, playerId: null }
+    }
+
     const cards = await db.card.findMany()
 
     const cardConnections = cards.map(card => ({ id: card.id }))
@@ -67,7 +71,6 @@ export const createMatch = async (table: TableWithPlayers) => {
         tableId: table.id,
         numberPlayers: table.players.length,
         deckId: deck.id,
-        buttonId: table.players[0].id,
         board: {
           connect: boardCards,
         },
@@ -80,6 +83,15 @@ export const createMatch = async (table: TableWithPlayers) => {
             cards: true,
           },
         },
+      },
+    })
+
+    await db.table.update({
+      where: {
+        id: table.id,
+      },
+      data: {
+        handOver: false,
       },
     })
 
@@ -123,8 +135,7 @@ export const createMatch = async (table: TableWithPlayers) => {
     })) as MatchWithParticipants
 
     return { match: newMatch, playerId: updatedPlayer.id }
-  } catch (error) {
-    console.log(error)
-    throw new Error('Match Internal Error')
+  } catch {
+    return { match: null, playerId: null }
   }
 }
