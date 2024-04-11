@@ -272,6 +272,7 @@ model Match {
   mainPot    Int    @default(0) @map(name: "main_pot")
   sidePot    String @default("[]") @map(name: "side_pot")
   callAmount Int    @default(0) @map(name: "call_amount")
+  minRaise   Int    @default(0) @map(name: "min_raise")
 
   isPreFlop  Boolean @default(false) @map(name: "is_pre_flop")
   isFlop     Boolean @default(false) @map(name: "is_flop")
@@ -304,7 +305,7 @@ model Participant {
   cardTwo   Card?   @relation("CardTwo", fields: [cardTwoId], references: [id])
 
   bet        Int     @default(0)
-  isChecked  Boolean @default(true)
+  isChecked  Boolean @default(false)
   isFolded   Boolean @default(false)
   lastAction String  @default("") @map(name: "last_action")
 

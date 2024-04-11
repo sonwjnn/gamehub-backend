@@ -1,5 +1,6 @@
+import { getParticipants } from './participants'
 import { db } from '../lib/db'
-import { Participant, Player, Prisma } from '@prisma/client'
+import { Match, Participant, Player, Prisma } from '@prisma/client'
 import {
   ParticipantWithPlayer,
   ParticipantWithPlayerAndCards,
@@ -63,10 +64,10 @@ export const updateTableById = async (
   }
 }
 
-const getUnfoldedParticipants = async (currentParticipant: Participant) => {
+const getUnfoldedParticipants = async (matchId: string) => {
   const participants = await db.participant.findMany({
     where: {
-      matchId: currentParticipant.matchId,
+      matchId,
       isFolded: false,
     },
     include: {
@@ -95,7 +96,7 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
     })
 
     if (!currentMatch) {
-      throw new Error('Match not found')
+      return null
     }
 
     await db.player.update({
@@ -138,7 +139,6 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
         id: winner.matchId,
       },
       data: {
-        pot: 0,
         winnerId: winner.playerId,
         isShowdown: true,
       },
@@ -147,7 +147,8 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
     await endHand(currentMatch.tableId)
   } catch (error) {
     console.log(error)
-    throw new Error('Table Error')
+    // throw new Error('Table Error')
+    return null
   }
 }
 
@@ -183,11 +184,11 @@ const endHand = async (tableId: string) => {
   }
 }
 
-const isActionComplete = async (participant: Participant) => {
+const isActionComplete = async (matchId: string) => {
   try {
     const currentPariticipants = await db.participant.findMany({
       where: {
-        matchId: participant.matchId,
+        matchId: matchId,
         isFolded: false,
       },
       include: {
@@ -210,15 +211,16 @@ const isActionComplete = async (participant: Participant) => {
       newCurrentParticipants[0].lastAction === 'CALL'
     )
   } catch {
-    throw new Error('Internal Error')
+    // throw new Error('Internal Error')
+    return null
   }
 }
 
-const isAllCheckedOrCalled = async (participant: Participant) => {
+const isAllCheckedOrCalled = async (currentMatch: Match) => {
   try {
     const currentPariticipants = await db.participant.findMany({
       where: {
-        matchId: participant.matchId,
+        matchId: currentMatch.id,
         isFolded: false,
       },
       include: {
@@ -236,20 +238,35 @@ const isAllCheckedOrCalled = async (participant: Participant) => {
 
     // if (newCurrentParticipants.length === 0) return true
 
-    return newCurrentParticipants.every(
-      participant =>
-        participant.lastAction === 'CHECK' || participant.lastAction === 'CALL'
-    )
+    return newCurrentParticipants.every(participant => {
+      const betMatchesCallAmount =
+        currentMatch.callAmount &&
+        participant.bet.toFixed(2) === currentMatch.callAmount.toFixed(2)
+      const noCallAmountButChecked =
+        !currentMatch.callAmount && participant.isChecked
+
+      return betMatchesCallAmount || noCallAmountButChecked
+    })
   } catch {
-    throw new Error('Internal Error')
+    throw new Error('Check Or Call Error')
   }
 }
 
-const resetBetsAndActions = async (participant: Participant) => {
+const resetBetsAndActions = async (matchId: string) => {
   try {
+    await db.match.update({
+      where: {
+        id: matchId,
+      },
+      data: {
+        callAmount: 0,
+        minRaise: 0,
+      },
+    })
+
     await db.participant.updateMany({
       where: {
-        matchId: participant.matchId,
+        matchId,
       },
       data: {
         isChecked: false,
@@ -262,9 +279,19 @@ const resetBetsAndActions = async (participant: Participant) => {
   }
 }
 
-const determineMainPotWinner = async (participant: Participant) => {
+const determineMainPotWinner = async (matchId: string) => {
   try {
-    const winnerParticipant = await determineWinner(participant)
+    const currentMatch = await db.match.findUnique({
+      where: {
+        id: matchId,
+      },
+    })
+
+    if (!currentMatch) {
+      return null
+    }
+
+    const winnerParticipant = await determineWinner(matchId, currentMatch.pot)
 
     if (!winnerParticipant) {
       return null
@@ -272,26 +299,25 @@ const determineMainPotWinner = async (participant: Participant) => {
 
     const updatedMatch = await db.match.update({
       where: {
-        id: participant.matchId,
+        id: matchId,
       },
       data: {
         isShowdown: true,
         winnerId: winnerParticipant.playerId,
-        pot: 0,
       },
     })
 
     await endHand(updatedMatch.tableId)
   } catch (error) {
     console.log(error)
-    throw new Error('Internal Error')
+    return null
   }
 }
 
-const determineWinner = async (participant: Participant) => {
+const determineWinner = async (matchId: string, amount: number) => {
   try {
     const unfoldedParticipants = (await getUnfoldedParticipants(
-      participant
+      matchId
     )) as ParticipantWithPlayerAndCards[]
 
     if (
@@ -316,29 +342,41 @@ const determineWinner = async (participant: Participant) => {
       },
     })
 
-    await db.player.update({
+    const updatedPlayer = await db.player.update({
       where: {
         id: winnerParticipant.playerId,
       },
       data: {
         isTurn: false,
       },
+      include: {
+        user: true,
+      },
+    })
+
+    await db.user.update({
+      where: {
+        id: updatedPlayer.userId,
+      },
+      data: {
+        chipsAmount: updatedPlayer.user.chipsAmount + amount,
+      },
     })
 
     return winnerParticipant
   } catch (error) {
     console.log(error)
-    throw new Error('Internal Error')
+    return null
   }
 }
 
-const dealNextStreet = async (participant: Participant) => {
+const dealNextStreet = async (matchId: string) => {
   try {
-    await resetBetsAndActions(participant)
+    await resetBetsAndActions(matchId)
 
     const currentMatch = await db.match.findUnique({
       where: {
-        id: participant.matchId,
+        id: matchId,
       },
       include: {
         board: true,
@@ -352,7 +390,7 @@ const dealNextStreet = async (participant: Participant) => {
     if (!currentMatch.isPreFlop && !currentMatch.isFlop) {
       await db.match.update({
         where: {
-          id: participant.matchId,
+          id: matchId,
         },
         data: {
           isPreFlop: true,
@@ -364,7 +402,7 @@ const dealNextStreet = async (participant: Participant) => {
     if (currentMatch.isFlop && currentMatch.isPreFlop) {
       await db.match.update({
         where: {
-          id: participant.matchId,
+          id: matchId,
         },
         data: {
           isTurn: true,
@@ -375,7 +413,7 @@ const dealNextStreet = async (participant: Participant) => {
     if (currentMatch.isTurn && currentMatch.isFlop && currentMatch.isPreFlop) {
       await db.match.update({
         where: {
-          id: participant.matchId,
+          id: matchId,
         },
         data: {
           isRiver: true,
@@ -389,11 +427,11 @@ const dealNextStreet = async (participant: Participant) => {
       currentMatch.isFlop &&
       currentMatch.isPreFlop
     ) {
-      await determineMainPotWinner(participant)
+      await determineMainPotWinner(matchId)
     }
   } catch (error) {
     console.log(error)
-    throw new Error('Internal Error')
+    return null
   }
 }
 
@@ -415,7 +453,7 @@ const updatePlayerTurn = async (table: TableWithPlayers, playerId: string) => {
 
     return updatedNextPlayer
   } catch (error) {
-    throw new Error('Internal Error')
+    return null
   }
 }
 
@@ -464,23 +502,46 @@ export const changeTurn = async (
       return ''
     }
 
+    const currentMatch = await db.match.findUnique({
+      where: {
+        id: participant.matchId,
+      },
+    })
+
+    if (!currentMatch) {
+      return ''
+    }
+
     const currentPlayer = table.players.find(player => player.isTurn)
 
     if (!currentPlayer) {
       return ''
     }
 
-    const unfoldedParticipants = await getUnfoldedParticipants(participant)
+    const unfoldedParticipants = await getUnfoldedParticipants(
+      participant.matchId
+    )
 
     if (unfoldedParticipants.length === 1) {
       await endWithoutShowdown(unfoldedParticipants[0])
       return ''
     }
 
-    const isComplete = await isAllCheckedOrCalled(participant)
+    const isActionIsComplete = await isActionComplete(participant.matchId)
+
+    if (isActionIsComplete) {
+      // this.calculateSidePots()
+      while (!currentMatch.isRiver && !table.handOver) {
+        dealNextStreet(participant.matchId)
+      }
+
+      return ''
+    }
+
+    const isComplete = await isAllCheckedOrCalled(currentMatch)
 
     if (isComplete) {
-      await dealNextStreet(participant)
+      await dealNextStreet(participant.matchId)
 
       const currentTable = await db.table.findUnique({
         where: {
@@ -531,6 +592,61 @@ export const changeTurn = async (
 
     return updatedNextPlayer.id
   } catch (error) {
-    throw new Error('Internal Error')
+    return ''
+  }
+}
+
+const getAllInThisTurn = async (matchId: string) => {
+  try {
+    const getParticipants = await db.participant.findMany({
+      where: {
+        matchId,
+        isFolded: false,
+      },
+      include: {
+        player: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+
+    const participants = getParticipants.filter(
+      participant =>
+        participant.player.user.chipsAmount === 0 && participant.bet > 0
+    )
+
+    return participants
+  } catch (error) {
+    return []
+  }
+}
+
+const calculateSidePots = async (participant: Participant) => {
+  try {
+    const allInParticipants = await getAllInThisTurn(participant.matchId)
+
+    const unfoldedParticipants = await getUnfoldedParticipants(
+      participant.matchId
+    )
+
+    if (allInParticipants.length < 1) return null
+
+    let sortedAllInParticipants = allInParticipants.sort(
+      (a, b) => a.bet - b.bet
+    )
+    if (
+      sortedAllInParticipants.length > 1 &&
+      sortedAllInParticipants.length === unfoldedParticipants.length
+    ) {
+      sortedAllInParticipants.pop()
+    }
+
+    for (const par of allInParticipants) {
+    }
+  } catch (error) {
+    console.log(error)
+    return null
   }
 }

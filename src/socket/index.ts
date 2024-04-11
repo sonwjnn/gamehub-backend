@@ -9,7 +9,6 @@ import { db } from '../lib/db'
 import {
   ClientToServerEvents,
   InterServerEvents,
-  MatchWithParticipants,
   PlayerWithUser,
   ServerToClientEvents,
   SocketData,
@@ -17,33 +16,10 @@ import {
 } from '../types'
 import { Server } from 'socket.io'
 
-import jwt, { JwtPayload, VerifyErrors } from 'jsonwebtoken'
-
-import { User, Player, Table, Participant } from '@prisma/client'
-import { jwtVerify } from '../helpers'
+import { Participant } from '@prisma/client'
 import { PokerActions } from '../pokergame/actions'
 import { changeTurn, getTableById } from '../db/tables'
-import { createMatch, getMatchById } from '../db/matches'
-
-async function getCurrentPlayers() {
-  try {
-    const players = await db.player.findMany()
-
-    return players
-  } catch {
-    return []
-  }
-}
-
-async function getCurrentTables() {
-  try {
-    const tables = await db.table.findMany()
-
-    return tables
-  } catch {
-    return []
-  }
-}
+import { createMatch } from '../db/matches'
 
 interface IInIt {
   socket: Socket<
@@ -134,13 +110,13 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!table) return
 
-    const participant = await handlePacticipantRaise(participantId)
+    const participant = await handlePacticipantRaise(participantId, amount)
 
     if (!participant) return
 
     broadcastToTable(
       table,
-      `player ${participant.player.user.username} raised ${amount}`
+      `player ${participant.player.user.username} raises to $${amount.toFixed(2)}`
     )
 
     changeTurnAndBroadcast(table, participant)
@@ -160,7 +136,7 @@ const init = ({ socket, io }: IInIt) => {
     changeTurnAndBroadcast(table, participant)
   })
 
-  function initNewMatch(table: TableWithPlayers) {
+  const initNewMatch = (table: TableWithPlayers) => {
     if (table.players.length > 1) {
       broadcastToTable(table, '---New match starting in 10 seconds---')
     }
@@ -184,11 +160,11 @@ const init = ({ socket, io }: IInIt) => {
     }, 10000)
   }
 
-  function broadcastToTable(
+  const broadcastToTable = (
     table: TableWithPlayers,
     message = '',
     from = null
-  ) {
+  ) => {
     for (let i = 0; i < table.players.length; i++) {
       let socketId = table.players[i].socketId as string
       // let tableCopy = hideOpponentCards(table, socketId)
@@ -199,7 +175,7 @@ const init = ({ socket, io }: IInIt) => {
     }
   }
 
-  function clearForOnePlayer(table: TableWithPlayers) {
+  const clearForOnePlayer = (table: TableWithPlayers) => {
     // table.clearWinMessages()
     setTimeout(() => {
       // table.resetBoardAndPot()
@@ -207,10 +183,10 @@ const init = ({ socket, io }: IInIt) => {
     }, 5000)
   }
 
-  function changeTurnAndBroadcast(
+  const changeTurnAndBroadcast = (
     table: TableWithPlayers,
     participant: Participant
-  ) {
+  ) => {
     setTimeout(async () => {
       const playerId = await changeTurn(table, participant)
 
@@ -231,6 +207,11 @@ const init = ({ socket, io }: IInIt) => {
           board: true,
           participants: {
             include: {
+              player: {
+                include: {
+                  user: true,
+                },
+              },
               cardOne: true,
               cardTwo: true,
             },

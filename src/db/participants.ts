@@ -50,14 +50,22 @@ export const handlePacticipantFold = async (id: string) => {
   }
 }
 
-export const handlePacticipantRaise = async (id: string) => {
+const raise = async (
+  currentParticipant: ParticipantWithPlayer,
+  amount: number
+) => {
   try {
+    const chipsAmount = currentParticipant.player?.user?.chipsAmount
+    const reRaiseAmount = amount - currentParticipant.bet
+    if (reRaiseAmount > chipsAmount) return
+
     const participant = await db.participant.update({
       where: {
-        id,
+        id: currentParticipant.id,
       },
       data: {
-        isFolded: true,
+        bet: amount,
+        lastAction: PokerActions.RAISE,
       },
       include: {
         player: {
@@ -65,10 +73,74 @@ export const handlePacticipantRaise = async (id: string) => {
             user: true,
           },
         },
-        match: true,
       },
     })
+
+    const updatedPlayer = await db.player.update({
+      where: {
+        id: currentParticipant.playerId,
+      },
+      data: {
+        isTurn: false,
+      },
+    })
+
+    await db.user.update({
+      where: {
+        id: updatedPlayer.userId,
+      },
+      data: {
+        chipsAmount: chipsAmount - reRaiseAmount,
+      },
+    })
+
     return participant
+  } catch {
+    return null
+  }
+}
+
+export const handlePacticipantRaise = async (id: string, amount: number) => {
+  try {
+    const currentParticipant = await db.participant.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        match: true,
+        player: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+
+    if (!currentParticipant) return null
+
+    const currentMatch = currentParticipant.match
+
+    let addedToPot = amount - currentParticipant.bet
+
+    const updatedCurrentParticipant = await raise(currentParticipant, amount)
+
+    const updatedMinRaise = currentMatch.callAmount
+      ? currentMatch.callAmount +
+        (currentParticipant.bet - currentMatch.callAmount) * 2
+      : currentParticipant.bet * 2
+
+    await db.match.update({
+      where: {
+        id: currentMatch.id,
+      },
+      data: {
+        pot: currentMatch.pot + addedToPot,
+        callAmount: amount,
+        minRaise: updatedMinRaise,
+      },
+    })
+
+    return updatedCurrentParticipant
   } catch (error) {
     return null
   }

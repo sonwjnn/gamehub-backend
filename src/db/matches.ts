@@ -127,6 +127,11 @@ export const createMatch = async (table: TableWithPlayers) => {
         board: true,
         participants: {
           include: {
+            player: {
+              include: {
+                user: true,
+              },
+            },
             cardOne: true,
             cardTwo: true,
           },
