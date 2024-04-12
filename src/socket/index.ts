@@ -38,6 +38,9 @@ interface IInIt {
   >
 }
 
+let currentTimeout: NodeJS.Timeout | null = null
+const DELAY_BETWEEN_MATCHES = 10000
+
 const init = ({ socket, io }: IInIt) => {
   socket.on(
     PokerActions.TABLE_JOINED,
@@ -56,9 +59,9 @@ const init = ({ socket, io }: IInIt) => {
 
       broadcastToTable(table, `${player.user?.username} joined`)
 
-      if (table?.players.length === 2) {
+      if (table?.players.length >= 2) {
         // start game
-        initNewMatch(table)
+        initNewMatch(table, DELAY_BETWEEN_MATCHES)
       }
     }
   )
@@ -157,11 +160,16 @@ const init = ({ socket, io }: IInIt) => {
     }
   })
 
-  const initNewMatch = (table: TableWithPlayers) => {
+  const initNewMatch = (table: TableWithPlayers, delay: number) => {
+    if (currentTimeout) {
+      clearTimeout(currentTimeout)
+    }
+
     if (table.players.length > 1) {
       broadcastToTable(table, 'New match starting in 10 seconds')
     }
-    setTimeout(async () => {
+
+    currentTimeout = setTimeout(async () => {
       // table.clearWinMessages();
       const { match, playerId } = await createMatch(table)
 
@@ -178,7 +186,7 @@ const init = ({ socket, io }: IInIt) => {
           playerId,
         })
       }
-    }, 10000)
+    }, delay || 10000)
   }
 
   const broadcastToTable = (
@@ -255,7 +263,7 @@ const init = ({ socket, io }: IInIt) => {
 
       // end match
       if (currentMatch?.table.handOver) {
-        initNewMatch(currentMatch?.table)
+        initNewMatch(currentMatch?.table, DELAY_BETWEEN_MATCHES)
       }
     }, 1000)
   }
