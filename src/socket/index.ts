@@ -20,6 +20,8 @@ import { Participant } from '@prisma/client'
 import { PokerActions } from '../pokergame/actions'
 import { changeTurn, getTableById } from '../db/tables'
 import { createMatch } from '../db/matches'
+import playerController from '../controllers/players'
+import { removePlayerBySocketId } from '../db/players'
 
 interface IInIt {
   socket: Socket<
@@ -134,6 +136,25 @@ const init = ({ socket, io }: IInIt) => {
     broadcastToTable(table, `player ${participant.player.user.username} called`)
 
     changeTurnAndBroadcast(table, participant)
+  })
+
+  socket.on('disconnect', async () => {
+    const player = await removePlayerBySocketId(socket.id)
+
+    if (!player || !player.table) return
+
+    const table = player.table
+
+    broadcastToTable(table, `${player.user?.username} left`)
+
+    for (let i = 0; i < table.players.length; i++) {
+      let socketId = table.players[i].socketId as string
+
+      io.to(socketId).emit(PokerActions.LEAVE_TABLE, {
+        tableId: table.id,
+        player,
+      })
+    }
   })
 
   const initNewMatch = (table: TableWithPlayers) => {

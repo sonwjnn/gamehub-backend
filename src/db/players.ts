@@ -1,4 +1,5 @@
 import { db } from '../lib/db'
+import { getTableById } from './tables'
 
 export const getPlayers = async () => {
   try {
@@ -66,6 +67,37 @@ export const getCurrentPlayerOfTableWithUser = async ({
     })
     return player
   } catch (error) {
+    return null
+  }
+}
+
+export const removePlayerBySocketId = async (socketId: string) => {
+  try {
+    const existingPlayer = await db.player.findFirst({
+      where: {
+        socketId,
+      },
+    })
+
+    if (!existingPlayer) {
+      return
+    }
+
+    const player = await db.player.delete({
+      where: {
+        id: existingPlayer.id,
+      },
+      include: {
+        user: true,
+      },
+    })
+
+    const updatedTable = await getTableById(player.tableId)
+
+    return { ...player, table: updatedTable }
+  } catch (error) {
+    console.log(error)
+
     return null
   }
 }

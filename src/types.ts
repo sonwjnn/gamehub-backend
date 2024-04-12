@@ -59,6 +59,8 @@ export interface ServerToClientEvents {
     match: MatchWithParticipants
     playerId: string
   }) => void
+
+  [PokerActions.DISCONNECTED]: ({ table }: { table: Table }) => void
   [PokerActions.CHANGE_TURN]: ({
     match,
     playerId,
