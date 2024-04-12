@@ -23,7 +23,7 @@ const removePlayer = async (req: Request, res: Response) => {
     const playerExisting = await db.player.findUnique({
       where: {
         id,
-        tableId: tableId as string,
+        // tableId: tableId as string,
       },
     })
 
@@ -34,7 +34,7 @@ const removePlayer = async (req: Request, res: Response) => {
     const player = await db.player.delete({
       where: {
         id,
-        tableId: tableId as string,
+        // tableId: tableId as string,
       },
       include: {
         user: true,

@@ -138,7 +138,7 @@ const init = ({ socket, io }: IInIt) => {
 
   const initNewMatch = (table: TableWithPlayers) => {
     if (table.players.length > 1) {
-      broadcastToTable(table, '---New match starting in 10 seconds---')
+      broadcastToTable(table, 'New match starting in 10 seconds')
     }
     setTimeout(async () => {
       // table.clearWinMessages();
@@ -146,7 +146,7 @@ const init = ({ socket, io }: IInIt) => {
 
       if (!match || !playerId) return
 
-      broadcastToTable(table, '--- New match started ---')
+      broadcastToTable(table, ' New match started ')
       for (let i = 0; i < table.players.length; i++) {
         let socketId = table.players[i].socketId as string
 
@@ -162,7 +162,7 @@ const init = ({ socket, io }: IInIt) => {
 
   const broadcastToTable = (
     table: TableWithPlayers,
-    message = '',
+    message: string,
     from = null
   ) => {
     for (let i = 0; i < table.players.length; i++) {
@@ -173,6 +173,10 @@ const init = ({ socket, io }: IInIt) => {
         from,
       })
     }
+
+    // socket.emit(PokerActions.TABLE_MESSAGE, { message, from })
+
+    // socket.join(table.id)
   }
 
   const clearForOnePlayer = (table: TableWithPlayers) => {
