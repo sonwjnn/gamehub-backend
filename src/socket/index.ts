@@ -59,7 +59,7 @@ const init = ({ socket, io }: IInIt) => {
 
       broadcastToTable(table, `${player.user?.username} joined`)
 
-      if (table?.players.length >= 2 && !table.handOver) {
+      if (table?.players.length >= 2 && table.handOver) {
         // start game
         initNewMatch(table, DELAY_BETWEEN_MATCHES)
       }
