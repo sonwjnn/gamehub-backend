@@ -305,9 +305,14 @@ const determineMainPotWinner = async (matchId: string) => {
         isShowdown: true,
         winnerId: winnerParticipant.playerId,
       },
+      include: {
+        table: true,
+      },
     })
 
     await endHand(updatedMatch.tableId)
+
+    return updatedMatch
   } catch (error) {
     console.log(error)
     return null
@@ -384,11 +389,11 @@ const dealNextStreet = async (matchId: string) => {
     })
 
     if (!currentMatch) {
-      throw new Error('Match not found')
+      return null
     }
 
     if (!currentMatch.isPreFlop && !currentMatch.isFlop) {
-      await db.match.update({
+      const updatedMatch = await db.match.update({
         where: {
           id: matchId,
         },
@@ -396,38 +401,60 @@ const dealNextStreet = async (matchId: string) => {
           isPreFlop: true,
           isFlop: true,
         },
+        include: {
+          table: true,
+        },
       })
+      return updatedMatch
     }
 
-    if (currentMatch.isFlop && currentMatch.isPreFlop) {
-      await db.match.update({
+    if (currentMatch.isFlop && currentMatch.isPreFlop && !currentMatch.isTurn) {
+      const updatedMatch = await db.match.update({
         where: {
           id: matchId,
         },
         data: {
           isTurn: true,
         },
+        include: {
+          table: true,
+        },
       })
+
+      return updatedMatch
     }
 
-    if (currentMatch.isTurn && currentMatch.isFlop && currentMatch.isPreFlop) {
-      await db.match.update({
+    if (
+      currentMatch.isTurn &&
+      currentMatch.isFlop &&
+      currentMatch.isPreFlop &&
+      !currentMatch.isRiver
+    ) {
+      const updatedMatch = await db.match.update({
         where: {
           id: matchId,
         },
         data: {
           isRiver: true,
         },
+        include: {
+          table: true,
+        },
       })
+
+      return updatedMatch
     }
 
     if (
       currentMatch.isRiver &&
       currentMatch.isTurn &&
       currentMatch.isFlop &&
-      currentMatch.isPreFlop
+      currentMatch.isPreFlop &&
+      !currentMatch.isShowdown
     ) {
-      await determineMainPotWinner(matchId)
+      const updatedMatch = await determineMainPotWinner(matchId)
+
+      return updatedMatch
     }
   } catch (error) {
     console.log(error)
@@ -530,9 +557,13 @@ export const changeTurn = async (
     const isActionIsComplete = await isActionComplete(participant.matchId)
 
     if (isActionIsComplete) {
+      let match = await dealNextStreet(participant.matchId)
+
+      if (!match) return ''
+
       // this.calculateSidePots()
-      while (!currentMatch.isRiver && !table.handOver) {
-        dealNextStreet(participant.matchId)
+      while (match && !match.isShowdown && !match.table.handOver) {
+        match = await dealNextStreet(participant.matchId)
       }
 
       return ''
