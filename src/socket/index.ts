@@ -39,7 +39,7 @@ interface IInIt {
 }
 
 let currentTimeout: NodeJS.Timeout | null = null
-const DELAY_BETWEEN_MATCHES = 10000
+const DELAY_BETWEEN_MATCHES = 15000
 
 const init = ({ socket, io }: IInIt) => {
   socket.on(
@@ -59,7 +59,7 @@ const init = ({ socket, io }: IInIt) => {
 
       broadcastToTable(table, `${player.user?.username} joined`)
 
-      if (table?.players.length >= 2 && table.handOver) {
+      if (table?.players.length === 2) {
         // start game
         initNewMatch(table, DELAY_BETWEEN_MATCHES)
       }
@@ -161,15 +161,15 @@ const init = ({ socket, io }: IInIt) => {
   })
 
   const initNewMatch = (table: TableWithPlayers, delay: number) => {
-    if (currentTimeout) {
-      clearTimeout(currentTimeout)
-    }
+    // if (currentTimeout) {
+    //   clearTimeout(currentTimeout)
+    // }
 
     if (table.players.length > 1) {
       broadcastToTable(table, 'New match starting in 10 seconds')
     }
 
-    currentTimeout = setTimeout(async () => {
+    setTimeout(async () => {
       // table.clearWinMessages();
       const { match, playerId } = await createMatch(table)
 

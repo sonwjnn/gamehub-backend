@@ -106,6 +106,16 @@ export const createMatch = async (table: TableWithPlayers) => {
       data: participantInputs,
     })
 
+    // update unfold player (default = true -> false)
+    await db.participant.updateMany({
+      where: {
+        matchId: match.id,
+      },
+      data: {
+        isFolded: false,
+      },
+    })
+
     const updatedPlayer = await db.player.update({
       where: {
         id: table.players[0].id,

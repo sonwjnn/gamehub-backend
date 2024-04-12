@@ -306,7 +306,7 @@ model Participant {
 
   bet        Int     @default(0)
   isChecked  Boolean @default(false)
-  isFolded   Boolean @default(false)
+  isFolded   Boolean @default(true)
   lastAction String  @default("") @map(name: "last_action")
 
   @@unique([playerId, matchId])
