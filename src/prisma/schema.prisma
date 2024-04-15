@@ -54,10 +54,12 @@ model Table {
   messages Message[]
   matches  Match[]
 
-  maxPlayers                Int     @default(10) @map(name: "max_players")
-  minPlayers                Int     @default(2) @map(name: "min_players")
-  minBuyIn                  Int     @map(name: "min_buy_in")
-  maxBuyIn                  Int     @map(name: "max_buy_in")
+  maxPlayers Int @default(10) @map(name: "max_players")
+  minPlayers Int @default(2) @map(name: "min_players")
+
+  minBuyIn Int @map(name: "min_buy_in")
+  maxBuyIn Int @map(name: "max_buy_in")
+
   possibleVictoryConditions String? @map(name: "possible_victory_conditions")
 
   handOver Boolean @default(true) @map(name: "hand_over")
@@ -136,12 +138,17 @@ model Player {
   tableId String @map(name: "table_id")
   table   Table  @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  isTurn Boolean @default(false) @map(name: "is_turn")
+  isTurn         Boolean @default(false) @map(name: "is_turn")
+  leaveNextMatch Boolean @default(false) @map(name: "leave_next_match")
 
   messages     Message[]
   participants Participant[]
-  matches      Match[]
-  winners      Match[]       @relation("MatchWinner")
+
+  smallBlindMatch Match[] @relation("SmallBlindPlayer")
+  bigBlindMatch   Match[] @relation("BigBlindPlayer")
+  buttonMatch     Match[] @relation("ButtonPlayer")
+
+  winners Match[] @relation("MatchWinner")
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 
@@ -272,7 +279,9 @@ model Match {
   mainPot    Int    @default(0) @map(name: "main_pot")
   sidePot    String @default("[]") @map(name: "side_pot")
   callAmount Int    @default(0) @map(name: "call_amount")
-  minRaise   Int    @default(0) @map(name: "min_raise")
+
+  minBet   Int @default(0) @map(name: "min_bet")
+  minRaise Int @default(0) @map(name: "min_raise")
 
   isPreFlop  Boolean @default(false) @map(name: "is_pre_flop")
   isFlop     Boolean @default(false) @map(name: "is_flop")
@@ -284,9 +293,17 @@ model Match {
   winner   Player? @relation("MatchWinner", fields: [winnerId], references: [id])
 
   buttonId String? @map(name: "button_id")
-  button   Player? @relation(fields: [buttonId], references: [id])
+  button   Player? @relation("ButtonPlayer", fields: [buttonId], references: [id])
+
+  smallBlindId String? @map(name: "small_blind_id")
+  smallBlind   Player? @relation("SmallBlindPlayer", fields: [smallBlindId], references: [id])
+
+  bigBlindId String? @map(name: "big_blind_id")
+  bigBlind   Player? @relation("BigBlindPlayer", fields: [bigBlindId], references: [id])
 
   participants Participant[]
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
 
   @@map(name: "match")
 }

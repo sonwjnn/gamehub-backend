@@ -1,6 +1,7 @@
 import { shuffle } from 'lodash'
 import { db } from '../lib/db'
 import { MatchWithParticipants, TableWithPlayers } from '../types'
+import { findNextActivePlayer, placeBlinds } from './tables'
 
 export const getMatches = async () => {
   try {
@@ -66,6 +67,38 @@ export const createMatch = async (table: TableWithPlayers) => {
       },
     })
 
+    // find button id
+    const oldMatch = await db.match.findFirst({
+      where: {
+        tableId: table.id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+
+    let buttonId = table.players[0].id
+
+    let lastButtonId = oldMatch ? oldMatch.buttonId : ''
+
+    if (lastButtonId) {
+      buttonId = await findNextActivePlayer(table.players, lastButtonId, 1)
+    }
+
+    // set blinds
+    const isHeadUp = table.players.length === 2
+    const smallBlindId = isHeadUp
+      ? buttonId
+      : await findNextActivePlayer(table.players, buttonId, 1)
+    const bigBlindId = isHeadUp
+      ? await findNextActivePlayer(table.players, buttonId, 1)
+      : await findNextActivePlayer(table.players, buttonId, 2)
+
+    const minBet = table.minBuyIn / 200
+    const pot = minBet * 3
+    const callAmount = minBet * 2
+    const minRaise = minBet * 4
+
     const match = await db.match.create({
       data: {
         tableId: table.id,
@@ -74,6 +107,13 @@ export const createMatch = async (table: TableWithPlayers) => {
         board: {
           connect: boardCards,
         },
+        buttonId,
+        smallBlindId,
+        bigBlindId,
+        callAmount,
+        pot,
+        minBet,
+        minRaise,
       },
 
       include: {
@@ -116,9 +156,18 @@ export const createMatch = async (table: TableWithPlayers) => {
       },
     })
 
+    // update blinds
+    await placeBlinds(table.id, match.id, smallBlindId, match.minBet)
+    await placeBlinds(table.id, match.id, bigBlindId, match.minBet * 2)
+
+    // set new turn
+    const turnPlayerId =
+      table.players.length <= 3
+        ? buttonId
+        : await findNextActivePlayer(table.players, buttonId, 3)
     const updatedPlayer = await db.player.update({
       where: {
-        id: table.players[0].id,
+        id: turnPlayerId,
         tableId: table.id,
       },
       data: {
@@ -134,6 +183,7 @@ export const createMatch = async (table: TableWithPlayers) => {
         id: match.id,
       },
       include: {
+        table: true,
         board: true,
         participants: {
           include: {

@@ -192,6 +192,7 @@ const getCurrentMatchByTableId = async (req: Request, res: Response) => {
         tableId,
       },
       include: {
+        table: true,
         board: true,
         participants: {
           include: {

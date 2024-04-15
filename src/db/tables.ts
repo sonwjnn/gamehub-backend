@@ -99,15 +99,6 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
       return null
     }
 
-    await db.player.update({
-      where: {
-        id: winner.playerId,
-      },
-      data: {
-        isTurn: false,
-      },
-    })
-
     const updatedWinner = await db.participant.update({
       where: {
         id: winner.id,
@@ -163,7 +154,7 @@ const clearPlayerTurn = async (tableId: string) => {
       },
     })
   } catch (error) {
-    throw new Error('Internal Error')
+    return null
   }
 }
 
@@ -180,7 +171,7 @@ const endHand = async (tableId: string) => {
       },
     })
   } catch (error) {
-    throw new Error('Table Error')
+    return null
   }
 }
 
@@ -252,7 +243,7 @@ const isAllCheckedOrCalled = async (currentMatch: Match) => {
   }
 }
 
-const resetBetsAndActions = async (matchId: string) => {
+const resetBetsAndActions = async (matchId: string, limit: number) => {
   try {
     await db.match.update({
       where: {
@@ -260,7 +251,7 @@ const resetBetsAndActions = async (matchId: string) => {
       },
       data: {
         callAmount: 0,
-        minRaise: 0,
+        minRaise: limit / 200,
       },
     })
 
@@ -377,13 +368,12 @@ const determineWinner = async (matchId: string, amount: number) => {
 
 const dealNextStreet = async (matchId: string) => {
   try {
-    await resetBetsAndActions(matchId)
-
     const currentMatch = await db.match.findUnique({
       where: {
         id: matchId,
       },
       include: {
+        table: true,
         board: true,
       },
     })
@@ -391,6 +381,8 @@ const dealNextStreet = async (matchId: string) => {
     if (!currentMatch) {
       return null
     }
+
+    await resetBetsAndActions(matchId, currentMatch.table.minBuyIn)
 
     if (!currentMatch.isPreFlop && !currentMatch.isFlop) {
       const updatedMatch = await db.match.update({
@@ -518,6 +510,79 @@ const findNextPlayerUnfolded = (
       : unfoldedParticipants[nextPlayerIndex]
 
   return nextPlayer.playerId
+}
+
+export const findNextActivePlayer = async (
+  players: Player[],
+  playerId: string,
+  places: number
+) => {
+  try {
+    const player = players.findIndex(player => player.id === playerId)
+
+    const nextPlayer =
+      player + places >= players.length
+        ? player + places - players.length
+        : player + places
+
+    return players[nextPlayer].id
+  } catch {
+    return ''
+  }
+}
+
+export const placeBlinds = async (
+  tableId: string,
+  matchId: string,
+  playerId: string,
+  amount: number
+) => {
+  try {
+    const player = await db.player.findUnique({
+      where: {
+        id: playerId,
+        tableId,
+      },
+      include: {
+        user: true,
+      },
+    })
+
+    if (!player) {
+      return null
+    }
+
+    const currentParticipant = await db.participant.findFirst({
+      where: {
+        playerId,
+        matchId,
+      },
+    })
+
+    if (!currentParticipant) return null
+
+    await db.participant.update({
+      where: {
+        id: currentParticipant.id,
+        playerId,
+        matchId,
+      },
+      data: {
+        bet: amount,
+      },
+    })
+
+    await db.user.update({
+      where: {
+        id: player.userId,
+      },
+      data: {
+        chipsAmount: player.user.chipsAmount - amount,
+      },
+    })
+  } catch {
+    return null
+  }
 }
 
 export const changeTurn = async (

@@ -20,7 +20,6 @@ import { Participant } from '@prisma/client'
 import { PokerActions } from '../pokergame/actions'
 import { changeTurn, getTableById } from '../db/tables'
 import { createMatch } from '../db/matches'
-import playerController from '../controllers/players'
 import { removePlayerBySocketId } from '../db/players'
 
 interface IInIt {
@@ -38,8 +37,7 @@ interface IInIt {
   >
 }
 
-let currentTimeout: NodeJS.Timeout | null = null
-const DELAY_BETWEEN_MATCHES = 15000
+const DELAY_BETWEEN_MATCHES = 10000
 
 const init = ({ socket, io }: IInIt) => {
   socket.on(
@@ -65,14 +63,18 @@ const init = ({ socket, io }: IInIt) => {
       }
     }
   )
-  socket.on(PokerActions.TABLE_LEFT, async ({ tableId, player }) => {
+  socket.on(PokerActions.TABLE_LEFT, async ({ tableId, playerId }) => {
     const table = await getTableById(tableId)
 
     if (!table) {
       return
     }
 
-    broadcastToTable(table, `${player.user?.username} left`)
+    const currentPlayer = table.players.find(p => p.id === playerId)
+
+    if (!currentPlayer) return null
+
+    broadcastToTable(table, `${currentPlayer.user?.username} left`)
 
     if (table?.players.length === 1) {
       clearForOnePlayer(table)
@@ -155,15 +157,44 @@ const init = ({ socket, io }: IInIt) => {
 
       io.to(socketId).emit(PokerActions.LEAVE_TABLE, {
         tableId: table.id,
-        player,
+        playerId: player.id,
       })
     }
   })
 
-  const initNewMatch = (table: TableWithPlayers, delay: number) => {
-    // if (currentTimeout) {
-    //   clearTimeout(currentTimeout)
-    // }
+  const clearPlayerLeaveChecked = async (table: TableWithPlayers) => {
+    try {
+      const players = await db.player.deleteMany({
+        where: {
+          tableId: table.id,
+          leaveNextMatch: true,
+        },
+      })
+
+      const updatedTable = await getTableById(table.id)
+
+      if (!updatedTable) return null
+
+      broadcastToTable(updatedTable, '')
+
+      for (let i = 0; i < updatedTable.players.length; i++) {
+        let socketId = updatedTable.players[i].socketId as string
+
+        io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
+          tableId: updatedTable.id,
+          players: updatedTable.players,
+        })
+      }
+
+      return updatedTable
+    } catch {
+      return null
+    }
+  }
+
+  const initNewMatch = async (table: TableWithPlayers, delay: number) => {
+
+    if (!table) return null
 
     if (table.players.length > 1) {
       broadcastToTable(table, 'New match starting in 10 seconds')
@@ -202,10 +233,6 @@ const init = ({ socket, io }: IInIt) => {
         from,
       })
     }
-
-    // socket.emit(PokerActions.TABLE_MESSAGE, { message, from })
-
-    // socket.join(table.id)
   }
 
   const clearForOnePlayer = (table: TableWithPlayers) => {
@@ -263,7 +290,11 @@ const init = ({ socket, io }: IInIt) => {
 
       // end match
       if (currentMatch?.table.handOver) {
-        initNewMatch(currentMatch?.table, DELAY_BETWEEN_MATCHES)
+        const updatedTable = await clearPlayerLeaveChecked(currentMatch?.table)
+
+        if (!updatedTable || updatedTable.players.length <= 1) return null
+
+        initNewMatch(updatedTable, DELAY_BETWEEN_MATCHES)
       }
     }, 1000)
   }

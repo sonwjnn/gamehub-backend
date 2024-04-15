@@ -41,7 +41,9 @@ const removePlayer = async (req: Request, res: Response) => {
       },
     })
 
-    res?.app.get('io').emit(PokerActions.LEAVE_TABLE, { tableId, player })
+    res?.app
+      .get('io')
+      .emit(PokerActions.LEAVE_TABLE, { tableId, playerId: player.id })
 
     responseHandler.ok(res)
   } catch (error) {
