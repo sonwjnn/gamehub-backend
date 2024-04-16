@@ -83,7 +83,47 @@ const register = async (req: express.Request, res: express.Response) => {
   }
 }
 
+const newPassword = async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params
+    const { password, newPassword } = req.body
+
+    if (!id || !password) {
+      return responseHandler.notfound(res)
+    }
+
+    const user = await db.user.findUnique({
+      where: {
+        id,
+      },
+    })
+
+    if (!user) {
+      return responseHandler.badrequest(res, 'User not found')
+    }
+
+    const expectedHash = authentication(user.salt as string, password)
+
+    if (user.password != expectedHash) {
+      return responseHandler.badrequest(res, 'Password not match')
+    }
+
+    const updatedUser = await updateUserById(user.id, {
+      password: authentication(user.salt, newPassword),
+    })
+
+    responseHandler.ok(res, {
+      user: updatedUser,
+      id: user.id,
+      message: 'Update password successfully!',
+    })
+  } catch (error) {
+    responseHandler.error(res)
+  }
+}
+
 export default {
   login,
   register,
+  newPassword,
 }

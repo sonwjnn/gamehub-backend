@@ -34,13 +34,15 @@ const update = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params
 
+    const { image, name } = req.body
+
     const existingUser = await getUserById(id)
 
     if (!existingUser) {
       return responseHandler.badrequest(res, 'User not found')
     }
 
-    const updatedUser = await updateUserById(existingUser.id, { ...req.body })
+    const updatedUser = await updateUserById(existingUser.id, { image, name })
 
     responseHandler.ok(res, {
       ...updatedUser,

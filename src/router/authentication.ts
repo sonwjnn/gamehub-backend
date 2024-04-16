@@ -9,6 +9,11 @@ const router = express.Router({ mergeParams: true })
 export default (): express.Router => {
   router.post('/register', requestHandler.validate, authController.register)
   router.post('/login', requestHandler.validate, authController.login)
+  router.post(
+    '/new-password/:id',
+    requestHandler.validate,
+    authController.newPassword
+  )
 
   return router
 }
