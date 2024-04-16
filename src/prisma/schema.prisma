@@ -302,6 +302,7 @@ model Match {
   bigBlind   Player? @relation("BigBlindPlayer", fields: [bigBlindId], references: [id])
 
   participants Participant[]
+  sidePots     SidePot[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 
@@ -326,6 +327,22 @@ model Participant {
   isFolded   Boolean @default(true)
   lastAction String  @default("") @map(name: "last_action")
 
+  sidePotId String?  @map(name: "side_pot_id")
+  sidePot   SidePot? @relation(fields: [sidePotId], references: [id])
+
   @@unique([playerId, matchId])
   @@map(name: "participant")
+}
+
+model SidePot {
+  id String @id @default(cuid())
+
+  matchId String @map(name: "match_id")
+  match   Match  @relation(fields: [matchId], references: [id])
+
+  amount Int @default(0)
+
+  participants Participant[]
+
+  @@map(name: "side_pots")
 }
