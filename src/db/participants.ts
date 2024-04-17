@@ -55,9 +55,9 @@ const raise = async (
   amount: number
 ) => {
   try {
-    const chipsAmount = currentParticipant.player?.user?.chipsAmount
+    const stack = currentParticipant.player.stack
     const reRaiseAmount = amount - currentParticipant.bet
-    if (reRaiseAmount > chipsAmount) return
+    if (reRaiseAmount > stack) return
 
     const participant = await db.participant.update({
       where: {
@@ -76,21 +76,13 @@ const raise = async (
       },
     })
 
-    const updatedPlayer = await db.player.update({
+    await db.player.update({
       where: {
         id: currentParticipant.playerId,
       },
       data: {
         isTurn: false,
-      },
-    })
-
-    await db.user.update({
-      where: {
-        id: updatedPlayer.userId,
-      },
-      data: {
-        chipsAmount: chipsAmount - reRaiseAmount,
+        stack: stack - reRaiseAmount,
       },
     })
 
@@ -152,9 +144,9 @@ const callRaise = async (
   amount: number
 ) => {
   try {
-    const chipsAmount = currentParticipant.player?.user?.chipsAmount
+    const stack = currentParticipant.player?.stack
     let amountCalled = amount - currentParticipant.bet
-    if (amountCalled >= chipsAmount) amountCalled = chipsAmount
+    if (amountCalled >= stack) amountCalled = stack
 
     const participant = await db.participant.update({
       where: {
@@ -173,21 +165,13 @@ const callRaise = async (
       },
     })
 
-    const updatedPlayer = await db.player.update({
+    await db.player.update({
       where: {
         id: currentParticipant.playerId,
       },
       data: {
         isTurn: false,
-      },
-    })
-
-    await db.user.update({
-      where: {
-        id: updatedPlayer.userId,
-      },
-      data: {
-        chipsAmount: chipsAmount - amountCalled,
+        stack: stack - amountCalled,
       },
     })
 
@@ -217,11 +201,11 @@ export const handlePacticipantCall = async (id: string) => {
 
     const currentMatch = currentParticipant.match
 
-    const chipsAmount = currentParticipant.player?.user?.chipsAmount
+    const stack = currentParticipant.player?.stack
 
     let addedToPot =
-      currentMatch.callAmount > chipsAmount + currentParticipant.bet
-        ? chipsAmount
+      currentMatch.callAmount > stack + currentParticipant.bet
+        ? stack
         : currentMatch.callAmount - currentParticipant.bet
 
     const updatedCurrentParticipant = await callRaise(

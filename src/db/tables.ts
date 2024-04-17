@@ -1,4 +1,3 @@
-import { getParticipants } from './participants'
 import { db } from '../lib/db'
 import { Match, Participant, Player, Prisma } from '@prisma/client'
 import {
@@ -116,12 +115,12 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
       },
     })
 
-    await db.user.update({
+    await db.player.update({
       where: {
-        id: winner.player.userId,
+        id: winner.player.id,
       },
       data: {
-        chipsAmount: updatedWinner.player.user.chipsAmount + currentMatch.pot,
+        stack: updatedWinner.player.stack + currentMatch.pot,
       },
     })
 
@@ -192,7 +191,7 @@ const isActionComplete = async (matchId: string) => {
     })
 
     const newCurrentParticipants = currentPariticipants.filter(
-      participant => participant.player.user.chipsAmount > 0
+      participant => participant.player.stack > 0
     )
 
     if (newCurrentParticipants.length === 0) return true
@@ -224,7 +223,7 @@ const isAllCheckedOrCalled = async (currentMatch: Match) => {
     })
 
     const newCurrentParticipants = currentPariticipants.filter(
-      participant => participant.player.user.chipsAmount > 0
+      participant => participant.player.stack > 0
     )
 
     // if (newCurrentParticipants.length === 0) return true
@@ -336,26 +335,21 @@ const determineWinner = async (matchId: string, amount: number) => {
         bet: 0,
         lastAction: 'WINNER',
       },
+      include: {
+        player: true,
+      },
     })
 
-    const updatedPlayer = await db.player.update({
+    await db.player.update({
       where: {
         id: winnerParticipant.playerId,
       },
       data: {
         isTurn: false,
+        stack: winnerParticipant.player.stack + amount,
       },
       include: {
         user: true,
-      },
-    })
-
-    await db.user.update({
-      where: {
-        id: updatedPlayer.userId,
-      },
-      data: {
-        chipsAmount: updatedPlayer.user.chipsAmount + amount,
       },
     })
 
@@ -382,7 +376,7 @@ const dealNextStreet = async (matchId: string) => {
       return null
     }
 
-    await resetBetsAndActions(matchId, currentMatch.table.minBuyIn)
+    await resetBetsAndActions(matchId, currentMatch.table.maxBuyIn)
 
     if (!currentMatch.isPreFlop && !currentMatch.isFlop) {
       const updatedMatch = await db.match.update({
@@ -561,7 +555,7 @@ export const placeBlinds = async (
 
     if (!currentParticipant) return null
 
-    await db.participant.update({
+    const updatedParticipant = await db.participant.update({
       where: {
         id: currentParticipant.id,
         playerId,
@@ -570,14 +564,17 @@ export const placeBlinds = async (
       data: {
         bet: amount,
       },
+      include: {
+        player: true,
+      },
     })
 
-    await db.user.update({
+    await db.player.update({
       where: {
         id: player.userId,
       },
       data: {
-        chipsAmount: player.user.chipsAmount - amount,
+        stack: updatedParticipant.player.stack - amount,
       },
     })
   } catch {
@@ -709,8 +706,7 @@ const getAllInThisTurn = async (matchId: string) => {
     })
 
     const participants = getParticipants.filter(
-      participant =>
-        participant.player.user.chipsAmount === 0 && participant.bet > 0
+      participant => participant.player.stack === 0 && participant.bet > 0
     )
 
     return participants

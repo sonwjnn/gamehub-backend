@@ -23,7 +23,10 @@ const removePlayer = async (req: Request, res: Response) => {
     const playerExisting = await db.player.findUnique({
       where: {
         id,
-        // tableId: tableId as string,
+        tableId: tableId as string,
+      },
+      include: {
+        user: true,
       },
     })
 
@@ -31,10 +34,21 @@ const removePlayer = async (req: Request, res: Response) => {
       return responseHandler.badrequest(res, 'Player not found')
     }
 
+    await db.user.update({
+      where: {
+        id: playerExisting.userId,
+      },
+      data: {
+        chipsAmount: {
+          increment: playerExisting.stack,
+        },
+      },
+    })
+
     const player = await db.player.delete({
       where: {
         id,
-        // tableId: tableId as string,
+        tableId: tableId as string,
       },
       include: {
         user: true,
@@ -82,7 +96,7 @@ const updatePlayerById = async (req: Request, res: Response) => {
 
 const createPlayer = async (req: Request, res: Response) => {
   try {
-    const { tableId, userId, socketId } = req.body
+    const { tableId, userId, socketId, buyIn } = req.body
 
     const isExistingPlayer = await db.player.findFirst({
       where: {
@@ -100,9 +114,22 @@ const createPlayer = async (req: Request, res: Response) => {
         tableId,
         userId,
         socketId,
+        buyIn,
+        stack: buyIn,
       },
       include: {
         user: true,
+      },
+    })
+
+    await db.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        chipsAmount: {
+          decrement: buyIn,
+        },
       },
     })
 

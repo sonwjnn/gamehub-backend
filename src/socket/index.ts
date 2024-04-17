@@ -164,7 +164,20 @@ const init = ({ socket, io }: IInIt) => {
 
   const clearPlayerLeaveChecked = async (table: TableWithPlayers) => {
     try {
-      const players = await db.player.deleteMany({
+      for (const player of table.players) {
+        await db.user.updateMany({
+          where: {
+            id: player.userId,
+          },
+          data: {
+            chipsAmount: {
+              increment: player.stack,
+            },
+          },
+        })
+      }
+
+      await db.player.deleteMany({
         where: {
           tableId: table.id,
           leaveNextMatch: true,
@@ -193,7 +206,6 @@ const init = ({ socket, io }: IInIt) => {
   }
 
   const initNewMatch = async (table: TableWithPlayers, delay: number) => {
-
     if (!table) return null
 
     if (table.players.length > 1) {

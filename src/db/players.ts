@@ -83,6 +83,17 @@ export const removePlayerBySocketId = async (socketId: string) => {
       return
     }
 
+    await db.user.update({
+      where: {
+        id: existingPlayer.userId,
+      },
+      data: {
+        chipsAmount: {
+          increment: existingPlayer.stack,
+        },
+      },
+    })
+
     const player = await db.player.delete({
       where: {
         id: existingPlayer.id,
