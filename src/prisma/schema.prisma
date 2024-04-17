@@ -346,5 +346,7 @@ model SidePot {
 
   participants Participant[]
 
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
   @@map(name: "side_pots")
 }

@@ -309,6 +309,35 @@ const determineMainPotWinner = async (matchId: string) => {
   }
 }
 
+const determineSidePotWinners = async (matchId: string) => {
+  try {
+    const currentMatch = await db.match.findUnique({
+      where: {
+        id: matchId,
+      },
+      include: {
+        sidePots: true,
+      },
+    })
+
+    if (!currentMatch) return null
+
+    if (currentMatch.sidePots.length < 0) return null
+
+    currentMatch.sidePots.map(async sidePot => {
+      const winnerParticipant = await determineWinner(matchId, sidePot.amount)
+
+      if (!winnerParticipant) {
+        return null
+      }
+
+      return winnerParticipant
+    })
+  } catch {
+    return null
+  }
+}
+
 const determineWinner = async (matchId: string, amount: number) => {
   try {
     const unfoldedParticipants = (await getUnfoldedParticipants(
@@ -335,9 +364,6 @@ const determineWinner = async (matchId: string, amount: number) => {
         bet: 0,
         lastAction: 'WINNER',
       },
-      include: {
-        player: true,
-      },
     })
 
     await db.player.update({
@@ -346,7 +372,9 @@ const determineWinner = async (matchId: string, amount: number) => {
       },
       data: {
         isTurn: false,
-        stack: winnerParticipant.player.stack + amount,
+        stack: {
+          increment: amount,
+        },
       },
       include: {
         user: true,
@@ -438,6 +466,7 @@ const dealNextStreet = async (matchId: string) => {
       currentMatch.isPreFlop &&
       !currentMatch.isShowdown
     ) {
+      await determineSidePotWinners(matchId)
       const updatedMatch = await determineMainPotWinner(matchId)
 
       return updatedMatch
@@ -619,6 +648,8 @@ export const changeTurn = async (
     const isActionIsComplete = await isActionComplete(participant.matchId)
 
     if (isActionIsComplete) {
+      await calculateSidePots(participant.matchId)
+
       let match = await dealNextStreet(participant.matchId)
 
       if (!match) return ''
@@ -634,6 +665,8 @@ export const changeTurn = async (
     const isComplete = await isAllCheckedOrCalled(currentMatch)
 
     if (isComplete) {
+      await calculateSidePots(participant.matchId)
+
       await dealNextStreet(participant.matchId)
 
       const currentTable = await db.table.findUnique({
@@ -715,13 +748,10 @@ const getAllInThisTurn = async (matchId: string) => {
   }
 }
 
-const calculateSidePots = async (participant: Participant) => {
+const calculateSidePots = async (matchId: string) => {
   try {
-    const allInParticipants = await getAllInThisTurn(participant.matchId)
-
-    const unfoldedParticipants = await getUnfoldedParticipants(
-      participant.matchId
-    )
+    const allInParticipants = await getAllInThisTurn(matchId)
+    const unfoldedParticipants = await getUnfoldedParticipants(matchId)
 
     if (allInParticipants.length < 1) return null
 
@@ -735,10 +765,76 @@ const calculateSidePots = async (participant: Participant) => {
       sortedAllInParticipants.pop()
     }
 
-    for (const par of allInParticipants) {
+    for (const allInParticipant of sortedAllInParticipants) {
+      if (allInParticipant.bet > 0) {
+        const sidePot = await db.sidePot.create({
+          data: {
+            matchId: matchId,
+            amount: 0,
+            participants: {
+              connect: sortedAllInParticipants.map(participant => ({
+                id: participant.id,
+              })),
+            },
+          },
+        })
+
+        for (const participant of unfoldedParticipants) {
+          const amountOver = participant.bet - allInParticipant.bet
+          if (amountOver > 0) {
+            const lastSidePot = await db.sidePot.findFirst({
+              where: {
+                matchId: participant.matchId,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+            })
+
+            if (!lastSidePot) throw new Error('No last side pot found')
+
+            if (lastSidePot.amount > 0) {
+              await db.sidePot.update({
+                where: {
+                  id: lastSidePot.id,
+                },
+                data: {
+                  amount: {
+                    increment: -amountOver,
+                  },
+                },
+              })
+            } else {
+              await db.match.update({
+                where: { id: participant.matchId },
+                data: { pot: { increment: -amountOver } },
+              })
+            }
+
+            participant.bet -= amountOver
+            await db.participant.update({
+              where: { id: participant.id },
+              data: { bet: participant.bet },
+            })
+
+            sidePot.amount += amountOver
+          }
+        }
+
+        allInParticipant.bet = 0
+        await db.participant.update({
+          where: { id: allInParticipant.id },
+          data: { bet: allInParticipant.bet },
+        })
+
+        await db.sidePot.update({
+          where: { id: sidePot.id },
+          data: { amount: sidePot.amount },
+        })
+      }
     }
   } catch (error) {
     console.log(error)
-    return null
+    throw error
   }
 }
