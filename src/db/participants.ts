@@ -126,7 +126,9 @@ export const handlePacticipantRaise = async (id: string, amount: number) => {
         id: currentMatch.id,
       },
       data: {
-        pot: currentMatch.pot + addedToPot,
+        pot: {
+          increment: addedToPot,
+        },
         callAmount: amount,
         minRaise: updatedMinRaise,
       },
@@ -153,7 +155,9 @@ const callRaise = async (
         id: currentParticipant.id,
       },
       data: {
-        bet: currentParticipant.bet + amount,
+        bet: {
+          increment: amountCalled,
+        },
         lastAction: PokerActions.CALL,
       },
       include: {
@@ -219,7 +223,9 @@ export const handlePacticipantCall = async (id: string) => {
         id: currentMatch.id,
       },
       data: {
-        pot: currentMatch.pot + addedToPot,
+        pot: {
+          increment: addedToPot,
+        },
       },
     })
 

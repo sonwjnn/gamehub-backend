@@ -584,7 +584,7 @@ export const placeBlinds = async (
 
     if (!currentParticipant) return null
 
-    const updatedParticipant = await db.participant.update({
+    await db.participant.update({
       where: {
         id: currentParticipant.id,
         playerId,
@@ -593,17 +593,16 @@ export const placeBlinds = async (
       data: {
         bet: amount,
       },
-      include: {
-        player: true,
-      },
     })
 
     await db.player.update({
       where: {
-        id: player.userId,
+        id: player.id,
       },
       data: {
-        stack: updatedParticipant.player.stack - amount,
+        stack: {
+          decrement: amount,
+        },
       },
     })
   } catch {
