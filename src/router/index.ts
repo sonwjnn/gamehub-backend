@@ -12,6 +12,8 @@ import recharges from './recharges'
 import socket from './socket'
 import matches from './matches'
 
+import usersAdmin from './admin/users'
+
 const router = express.Router()
 
 export default (): express.Router => {
@@ -27,6 +29,9 @@ export default (): express.Router => {
   router.use('/api/recharges', recharges())
   router.use('/api/socket', socket())
   router.use('/api/matches', matches())
+
+  // api routes for admin
+  router.use('/api/admin/users', usersAdmin())
 
   return router
 }

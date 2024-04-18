@@ -16,6 +16,7 @@ export default (): express.Router => {
   router.post('/', playerController.createPlayer)
   router.delete('/:id', playerController.removePlayer)
   router.put('/:id', requestHandler.validate, playerController.updatePlayerById)
+  router.post('/rebuy/:id', playerController.rebuy)
 
   return router
 }

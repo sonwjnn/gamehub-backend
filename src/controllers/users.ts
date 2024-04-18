@@ -69,9 +69,31 @@ const getUser = async (req: express.Request, res: express.Response) => {
   }
 }
 
+const updateAll = async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params
+
+    const existingUser = await getUserById(id)
+
+    if (!existingUser) {
+      return responseHandler.badrequest(res, 'User not found')
+    }
+
+    const updatedUser = await updateUserById(existingUser.id, { ...req.body })
+
+    responseHandler.ok(res, {
+      ...updatedUser,
+      message: 'Update user successfully!',
+    })
+  } catch (error) {
+    responseHandler.error(res)
+  }
+}
+
 export default {
   getAllUsers,
   getUser,
   deleteUserById,
   update,
+  updateAll,
 }

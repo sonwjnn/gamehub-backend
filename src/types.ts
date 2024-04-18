@@ -101,6 +101,14 @@ export interface ClientToServerEvents {
     tableId: string
     player: PlayerWithUser
   }) => void
+
+  [PokerActions.REBOUGHT]: ({
+    tableId,
+    player,
+  }: {
+    tableId: string
+    player: PlayerWithUser
+  }) => void
   [PokerActions.TABLE_LEFT]: ({
     tableId,
     playerId,

@@ -81,6 +81,28 @@ const init = ({ socket, io }: IInIt) => {
     }
   })
 
+  socket.on(
+    PokerActions.REBOUGHT,
+    async ({
+      tableId,
+      player,
+    }: {
+      tableId: string
+      player: PlayerWithUser
+    }) => {
+      const table = await getTableById(tableId)
+
+      if (!table) {
+        return
+      }
+
+      broadcastToTable(
+        table,
+        `${player.user?.username} is rebought $${player.stack}`
+      )
+    }
+  )
+
   socket.on(PokerActions.FOLD, async ({ tableId, participantId }) => {
     const table = await getTableById(tableId)
 

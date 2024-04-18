@@ -186,6 +186,57 @@ const getCurrentPlayerWithoutTable = async (req: Request, res: Response) => {
     responseHandler.error(res)
   }
 }
+
+const rebuy = async (req: Request, res: Response) => {
+  try {
+    const { tableId, userId, buyIn } = req.body
+    const { id } = req.params
+
+    const isExistingPlayer = await db.player.findUnique({
+      where: {
+        id,
+      },
+    })
+
+    if (!isExistingPlayer) {
+      return responseHandler.badrequest(res, 'Player does not exists!')
+    }
+
+    const player = await db.player.update({
+      where: {
+        id: isExistingPlayer.id,
+      },
+      data: {
+        buyIn: {
+          increment: buyIn,
+        },
+        stack: {
+          increment: buyIn,
+        },
+      },
+      include: {
+        user: true,
+      },
+    })
+
+    await db.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        chipsAmount: {
+          decrement: buyIn,
+        },
+      },
+    })
+
+    res?.app.get('io').emit(PokerActions.REBUY, { tableId, player })
+
+    responseHandler.ok(res, player)
+  } catch (error) {
+    responseHandler.error(res)
+  }
+}
 export default {
   getPlayer,
   createPlayer,
@@ -194,4 +245,5 @@ export default {
   updatePlayerById,
   getCurrentPlayerOfTable,
   getCurrentPlayerWithoutTable,
+  rebuy,
 }
