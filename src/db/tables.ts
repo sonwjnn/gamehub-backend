@@ -98,20 +98,13 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
       return null
     }
 
-    const updatedWinner = await db.participant.update({
+    await db.participant.update({
       where: {
         id: winner.id,
       },
       data: {
         bet: 0,
         lastAction: PokerActions.WINNER,
-      },
-      include: {
-        player: {
-          include: {
-            user: true,
-          },
-        },
       },
     })
 
@@ -120,7 +113,9 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
         id: winner.player.id,
       },
       data: {
-        stack: updatedWinner.player.stack + currentMatch.pot,
+        stack: {
+          increment: currentMatch.pot,
+        },
       },
     })
 

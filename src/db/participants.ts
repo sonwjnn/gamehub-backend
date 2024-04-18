@@ -1,4 +1,3 @@
-import { Match, Participant } from '@prisma/client'
 import { db } from '../lib/db'
 import { PokerActions } from '../pokergame/actions'
 import { ParticipantWithPlayer } from '../types'
@@ -82,7 +81,9 @@ const raise = async (
       },
       data: {
         isTurn: false,
-        stack: stack - reRaiseAmount,
+        stack: {
+          decrement: reRaiseAmount,
+        },
       },
     })
 
@@ -142,7 +143,6 @@ export const handlePacticipantRaise = async (id: string, amount: number) => {
 
 const callRaise = async (
   currentParticipant: ParticipantWithPlayer,
-  match: Match,
   amount: number
 ) => {
   try {
@@ -194,7 +194,11 @@ export const handlePacticipantCall = async (id: string) => {
         id,
       },
       include: {
-        match: true,
+        match: {
+          include: {
+            sidePots: true,
+          },
+        },
         player: {
           include: {
             user: true,
@@ -216,20 +220,43 @@ export const handlePacticipantCall = async (id: string) => {
 
     const updatedCurrentParticipant = await callRaise(
       currentParticipant,
-      currentMatch,
-      addedToPot
+      currentMatch.callAmount
     )
 
-    await db.match.update({
-      where: {
-        id: currentMatch.id,
-      },
-      data: {
-        pot: {
-          increment: addedToPot,
+    if (currentMatch.sidePots.length > 0) {
+      const lastSidePot =
+        currentMatch.sidePots[currentMatch.sidePots.length - 1]
+      await db.match.update({
+        where: {
+          id: currentMatch.id,
         },
-      },
-    })
+        data: {
+          sidePots: {
+            update: {
+              where: {
+                id: lastSidePot.id,
+              },
+              data: {
+                amount: {
+                  increment: addedToPot,
+                },
+              },
+            },
+          },
+        },
+      })
+    } else {
+      await db.match.update({
+        where: {
+          id: currentMatch.id,
+        },
+        data: {
+          pot: {
+            increment: addedToPot,
+          },
+        },
+      })
+    }
 
     return updatedCurrentParticipant
   } catch (error) {
