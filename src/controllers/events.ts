@@ -32,6 +32,24 @@ const deleteEventById = async (req: Request, res: Response) => {
 
 const updateEventById = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params
+
+    const existingEvent = await getEventById(id)
+
+    if (!existingEvent) {
+      return responseHandler.badrequest(res, 'Event not found')
+    }
+
+    const updatedEvent = await db.event.update({
+      where: {
+        id,
+      },
+      data: {
+        ...req.body,
+      },
+    })
+
+    responseHandler.ok(res, updatedEvent)
   } catch (error) {
     responseHandler.error(res)
   }
