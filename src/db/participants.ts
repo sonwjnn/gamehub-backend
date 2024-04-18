@@ -175,7 +175,9 @@ const callRaise = async (
       },
       data: {
         isTurn: false,
-        stack: stack - amountCalled,
+        stack: {
+          decrement: amountCalled,
+        },
       },
     })
 
