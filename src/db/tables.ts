@@ -401,13 +401,12 @@ const dealNextStreet = async (matchId: string) => {
 
     await resetBetsAndActions(matchId, currentMatch.table.maxBuyIn)
 
-    if (!currentMatch.isPreFlop && !currentMatch.isFlop) {
+    if (currentMatch.isPreFlop && !currentMatch.isFlop) {
       const updatedMatch = await db.match.update({
         where: {
           id: matchId,
         },
         data: {
-          isPreFlop: true,
           isFlop: true,
         },
         include: {

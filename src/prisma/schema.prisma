@@ -285,7 +285,7 @@ model Match {
   minBet   Int @default(0) @map(name: "min_bet")
   minRaise Int @default(0) @map(name: "min_raise")
 
-  isPreFlop  Boolean @default(false) @map(name: "is_pre_flop")
+  isPreFlop  Boolean @default(true) @map(name: "is_pre_flop")
   isFlop     Boolean @default(false) @map(name: "is_flop")
   isTurn     Boolean @default(false) @map(name: "is_turn")
   isRiver    Boolean @default(false) @map(name: "is_river")
