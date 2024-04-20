@@ -341,10 +341,12 @@ model Participant {
   cardTwoId String? @map(name: "card_two_id")
   cardTwo   Card?   @relation("CardTwo", fields: [cardTwoId], references: [id])
 
-  bet        Int     @default(0)
-  isChecked  Boolean @default(false)
-  isFolded   Boolean @default(true)
-  lastAction String  @default("") @map(name: "last_action")
+  bet       Int     @default(0)
+  isChecked Boolean @default(false) @map(name: "is_checked")
+  isFolded  Boolean @default(true) @map(name: "is_folded")
+  isAllIn   Boolean @default(false) @map(name: "is_all_in")
+
+  lastAction String @default("") @map(name: "last_action")
 
   sidePotId String?  @map(name: "side_pot_id")
   sidePot   SidePot? @relation(fields: [sidePotId], references: [id])

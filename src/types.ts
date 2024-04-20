@@ -1,7 +1,7 @@
 import { Card, Match, Participant, Player, Table, User } from '@prisma/client'
 import { Server as NetServer, Socket } from 'net'
 import { Server as SocketIOServer } from 'socket.io'
-import { PokerActions } from './pokergame/actions'
+import { PokerActions, RaiseType } from './pokergame/actions'
 
 export type PlayerWithUser = Player & { user: User }
 
@@ -148,10 +148,12 @@ export interface ClientToServerEvents {
     tableId,
     participantId,
     amount,
+    type,
   }: {
     tableId: string
     participantId: string
     amount: number
+    type: RaiseType
   }) => void
 }
 

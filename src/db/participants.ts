@@ -1,5 +1,5 @@
 import { db } from '../lib/db'
-import { PokerActions } from '../pokergame/actions'
+import { PokerActions, RaiseType } from '../pokergame/actions'
 import { ParticipantWithPlayer } from '../types'
 
 export const getParticipants = async () => {
@@ -51,7 +51,8 @@ export const handlePacticipantFold = async (id: string) => {
 
 const raise = async (
   currentParticipant: ParticipantWithPlayer,
-  amount: number
+  amount: number,
+  type: RaiseType
 ) => {
   try {
     const stack = currentParticipant.player.stack
@@ -64,7 +65,8 @@ const raise = async (
       },
       data: {
         bet: amount,
-        lastAction: PokerActions.RAISE,
+        lastAction: type,
+        isAllIn: type === RaiseType.ALLIN,
       },
       include: {
         player: {
@@ -93,7 +95,11 @@ const raise = async (
   }
 }
 
-export const handlePacticipantRaise = async (id: string, amount: number) => {
+export const handlePacticipantRaise = async (
+  id: string,
+  amount: number,
+  type: RaiseType
+) => {
   try {
     const currentParticipant = await db.participant.findUnique({
       where: {
@@ -115,7 +121,11 @@ export const handlePacticipantRaise = async (id: string, amount: number) => {
 
     let addedToPot = amount - currentParticipant.bet
 
-    const updatedCurrentParticipant = await raise(currentParticipant, amount)
+    const updatedCurrentParticipant = await raise(
+      currentParticipant,
+      amount,
+      type
+    )
 
     const updatedMinRaise = currentMatch.callAmount
       ? currentMatch.callAmount +

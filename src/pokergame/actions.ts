@@ -24,3 +24,11 @@ export enum PokerActions {
   DISCONNECTED = 'DISCONNECTED',
   REBOUGHT = 'REBOUGHT',
 }
+
+export enum RaiseType {
+  RAISE = 'RAISE',
+  QUARTER = 'QUARTER',
+  HALF = 'HALF',
+  FULL = 'FULL',
+  ALLIN = 'ALLIN',
+}

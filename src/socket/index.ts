@@ -134,22 +134,29 @@ const init = ({ socket, io }: IInIt) => {
     changeTurnAndBroadcast(table, participant)
   })
 
-  socket.on(PokerActions.RAISE, async ({ tableId, participantId, amount }) => {
-    const table = await getTableById(tableId)
+  socket.on(
+    PokerActions.RAISE,
+    async ({ tableId, participantId, amount, type }) => {
+      const table = await getTableById(tableId)
 
-    if (!table) return
+      if (!table) return
 
-    const participant = await handlePacticipantRaise(participantId, amount)
+      const participant = await handlePacticipantRaise(
+        participantId,
+        amount,
+        type
+      )
 
-    if (!participant) return
+      if (!participant) return
 
-    broadcastToTable(
-      table,
-      `player ${participant.player.user.username} raises to $${amount.toFixed(2)}`
-    )
+      broadcastToTable(
+        table,
+        `player ${participant.player.user.username} raises to $${amount.toFixed(2)}`
+      )
 
-    changeTurnAndBroadcast(table, participant)
-  })
+      changeTurnAndBroadcast(table, participant)
+    }
+  )
 
   socket.on(PokerActions.CALL, async ({ tableId, participantId }) => {
     const table = await getTableById(tableId)
@@ -186,8 +193,12 @@ const init = ({ socket, io }: IInIt) => {
 
   const clearPlayerLeaveChecked = async (table: TableWithPlayers) => {
     try {
-      for (const player of table.players) {
-        await db.user.updateMany({
+      const players = table.players.filter(p => p.leaveNextMatch)
+
+      if (!players) return null
+
+      for (const player of players) {
+        await db.user.update({
           where: {
             id: player.userId,
           },
