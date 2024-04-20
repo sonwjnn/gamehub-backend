@@ -310,11 +310,30 @@ const init = ({ socket, io }: IInIt) => {
               cardTwo: true,
             },
           },
+          winMessages: {
+            include: {
+              winnerHand: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
         },
       })
 
-      for (let i = 0; i < table.players.length; i++) {
-        let socketId = table.players[i].socketId as string
+      const newPlayers = currentMatch?.table?.players || []
+
+      for (let i = 0; i < newPlayers.length; i++) {
+        let socketId = newPlayers[i].socketId as string
+        // let tableCopy = hideOpponentCards(table, socketId)
+        io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
+          tableId: table.id,
+          players: newPlayers,
+        })
+      }
+
+      for (let i = 0; i < newPlayers.length; i++) {
+        let socketId = newPlayers[i].socketId as string
         // let tableCopy = hideOpponentCards(table, socketId)
         io.to(socketId).emit(PokerActions.CHANGE_TURN, {
           match: currentMatch,

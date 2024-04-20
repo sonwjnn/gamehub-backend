@@ -65,7 +65,8 @@ model Table {
 
   handOver Boolean @default(true) @map(name: "hand_over")
 
-  decks     Deck[]
+  decks Deck[]
+
   histories History[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
@@ -73,6 +74,22 @@ model Table {
 
   @@index([userId])
   @@map(name: "tables")
+}
+
+model WinMessages {
+  id String @id @default(cuid())
+
+  matchId String @map(name: "match_id")
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  content    String
+  handName   String @map(name: "hand_name")
+  amount     Int
+  winnerHand Card[]
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
+  @@map(name: "winner_messages")
 }
 
 enum CardRank {
@@ -103,8 +120,9 @@ model Card {
   rank CardRank
   suit CardSuit
 
-  decks   Deck[]
-  matches Match[]
+  decks     Deck[]
+  matches   Match[]
+  bestHands WinMessages[]
 
   participantOne Participant[] @relation("CardOne")
   participantTwo Participant[] @relation("CardTwo")
@@ -265,7 +283,6 @@ model Deck {
   @@map(name: "deck")
 }
 
-// Match table
 model Match {
   id            String    @id @default(cuid())
   tableId       String    @map(name: "table_id")
@@ -305,13 +322,13 @@ model Match {
 
   participants Participant[]
   sidePots     SidePot[]
+  winMessages  WinMessages[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 
   @@map(name: "match")
 }
 
-// Participant table
 model Participant {
   id       String @id @default(cuid())
   matchId  String @map(name: "match_id")

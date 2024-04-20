@@ -1,12 +1,13 @@
 import { db } from '../lib/db'
 import { Match, Participant, Player, Prisma } from '@prisma/client'
-import {
-  ParticipantWithPlayer,
-  ParticipantWithPlayerAndCards,
-  TableWithPlayers,
-} from '../types'
+import { ParticipantWithPlayerAndCards, TableWithPlayers } from '../types'
 import { PokerActions } from '../pokergame/actions'
-import { getWinner } from './poker'
+import {
+  formattedCardsForPokerSolver,
+  getBestHand,
+  getWinner,
+  unformatCardsForPokerSolver,
+} from './poker'
 
 // Table Actions
 export const getTables = async () => {
@@ -83,7 +84,7 @@ const getUnfoldedParticipants = async (matchId: string) => {
   return participants
 }
 
-const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
+const endWithoutShowdown = async (winner: ParticipantWithPlayerAndCards) => {
   try {
     const currentMatch = await db.match.findUnique({
       where: {
@@ -91,6 +92,7 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
       },
       include: {
         participants: true,
+        board: true,
       },
     })
 
@@ -108,7 +110,7 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
       },
     })
 
-    await db.player.update({
+    const winnerPlayer = await db.player.update({
       where: {
         id: winner.player.id,
       },
@@ -116,6 +118,9 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
         stack: {
           increment: currentMatch.pot,
         },
+      },
+      include: {
+        user: true,
       },
     })
 
@@ -126,6 +131,24 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayer) => {
       data: {
         winnerId: winner.playerId,
         isShowdown: true,
+      },
+    })
+
+    const winnerHand = getBestHand([
+      ...currentMatch.board.map(card => formattedCardsForPokerSolver(card)),
+      formattedCardsForPokerSolver(winner.cardOne),
+      formattedCardsForPokerSolver(winner.cardTwo),
+    ])
+
+    await db.winMessages.create({
+      data: {
+        matchId: winner.matchId,
+        content: `${winnerPlayer.user.username} wins $${currentMatch.pot} with ${winnerHand.name}`,
+        amount: currentMatch.pot,
+        handName: winnerHand.name,
+        winnerHand: {
+          connect: winnerHand.cards.map(card => ({ id: card.id })),
+        },
       },
     })
 
@@ -346,14 +369,16 @@ const determineWinner = async (matchId: string, amount: number) => {
       return null
     }
 
-    const winnerIds = await getWinner(unfoldedParticipants)
+    const res = await getWinner(unfoldedParticipants)
 
-    if (!winnerIds?.length) return null
+    if (!res) return null
+
+    const winnerFirst = res[0]
 
     // TODO: Hoa Bai
     const winnerParticipant = await db.participant.update({
       where: {
-        id: winnerIds[0] as string,
+        id: winnerFirst.id as string,
       },
       data: {
         bet: 0,
@@ -361,7 +386,7 @@ const determineWinner = async (matchId: string, amount: number) => {
       },
     })
 
-    await db.player.update({
+    const player = await db.player.update({
       where: {
         id: winnerParticipant.playerId,
       },
@@ -373,6 +398,18 @@ const determineWinner = async (matchId: string, amount: number) => {
       },
       include: {
         user: true,
+      },
+    })
+
+    await db.winMessages.create({
+      data: {
+        matchId,
+        content: `${player.user.username} wins $${amount} with ${winnerFirst.handName}`,
+        amount,
+        handName: winnerFirst.handName,
+        winnerHand: {
+          connect: winnerFirst.winnerHand.map(card => ({ id: card.id })),
+        },
       },
     })
 
@@ -629,9 +666,9 @@ export const changeTurn = async (
       return ''
     }
 
-    const unfoldedParticipants = await getUnfoldedParticipants(
+    const unfoldedParticipants = (await getUnfoldedParticipants(
       participant.matchId
-    )
+    )) as ParticipantWithPlayerAndCards[]
 
     if (unfoldedParticipants.length === 1) {
       await endWithoutShowdown(unfoldedParticipants[0])

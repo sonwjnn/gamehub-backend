@@ -8,11 +8,12 @@ interface Hand {
 }
 
 interface CustomCard {
+  id: string
   rank: string
   suit: string
 }
 
-const formattedCardsForPokerSolver = (card: CustomCard) => {
+export const formattedCardsForPokerSolver = (card: CustomCard) => {
   const rankMap: { [key: string]: string } = {
     TWO: '2',
     THREE: '3',
@@ -39,7 +40,7 @@ const formattedCardsForPokerSolver = (card: CustomCard) => {
   return { ...card, rank: rankMap[card.rank], suit: suitMap[card.suit] }
 }
 
-const unformatCardsForPokerSolver = (card: CustomCard) => {
+export const unformatCardsForPokerSolver = (card: CustomCard) => {
   const rankMap: { [key: string]: string } = {
     '2': 'TWO',
     '3': 'THREE',
@@ -64,6 +65,12 @@ const unformatCardsForPokerSolver = (card: CustomCard) => {
   }
 
   return { ...card, rank: rankMap[card.rank], suit: suitMap[card.suit] }
+}
+
+interface getWinnerResponse {
+  id: string
+  handName: string
+  winnerHand: CustomCard[]
 }
 
 export const getWinner = async (
@@ -94,7 +101,7 @@ export const getWinner = async (
   let winnerHand = getBestHand(winnerCardsWithBoard)
 
   console.log('best hand 1: ', winnerHand)
-  let ties = [] as string[]
+  let ties = [] as getWinnerResponse[]
   for (let i = 1; i < formattedPaticipants.length; i++) {
     let participant = formattedPaticipants[i]
     let participantHand = getBestHand([
@@ -110,10 +117,22 @@ export const getWinner = async (
       winner = participant
       winnerHand = participantHand
     } else if (comparison == -1) {
-      if (!ties.includes(winner.id)) {
-        ties.push(winner.id)
+      if (!ties.some(tie => tie.id === winner.id)) {
+        ties.push({
+          id: winner.id,
+          handName: winnerHand.name,
+          winnerHand: winnerHand.cards.map(card =>
+            unformatCardsForPokerSolver(card)
+          ),
+        })
       }
-      ties.push(participant.id)
+      ties.push({
+        id: participant.id,
+        handName: participantHand.name,
+        winnerHand: participantHand.cards.map(card =>
+          unformatCardsForPokerSolver(card)
+        ),
+      })
     } // else, the winner is still the winner
   }
   if (ties.length > 0) {
@@ -122,7 +141,17 @@ export const getWinner = async (
 
   console.log('winner: ', winner.id)
 
-  return [winner.id]
+  const res = [
+    {
+      id: winner.id,
+      handName: winnerHand.name,
+      winnerHand: winnerHand.cards.map(card =>
+        unformatCardsForPokerSolver(card)
+      ),
+    },
+  ]
+
+  return res
 }
 
 const sortHand = (cards: CustomCard[]) => {
@@ -136,7 +165,7 @@ const sortHand = (cards: CustomCard[]) => {
   return cards as CustomCard[]
 }
 
-const getBestHand = (cards: CustomCard[]): Hand => {
+export const getBestHand = (cards: CustomCard[]): Hand => {
   // Of a list of 7 cards in 'CARDS', return the best hand possible. Assumes cards == length 7.
   // x = hasStraightFlush(cards)
   // if (x) { return x }
