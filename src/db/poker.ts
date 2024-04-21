@@ -13,7 +13,7 @@ interface CustomCard {
   suit: string
 }
 
-export const formattedCardsForPokerSolver = (card: CustomCard) => {
+export const formattedCards = (card: CustomCard) => {
   const rankMap: { [key: string]: string } = {
     TWO: '2',
     THREE: '3',
@@ -40,7 +40,7 @@ export const formattedCardsForPokerSolver = (card: CustomCard) => {
   return { ...card, rank: rankMap[card.rank], suit: suitMap[card.suit] }
 }
 
-export const unformatCardsForPokerSolver = (card: CustomCard) => {
+export const unformatCards = (card: CustomCard) => {
   const rankMap: { [key: string]: string } = {
     '2': 'TWO',
     '3': 'THREE',
@@ -70,6 +70,7 @@ export const unformatCardsForPokerSolver = (card: CustomCard) => {
 interface getWinnerResponse {
   id: string
   handName: string
+  bestHand: CustomCard[]
   winnerHand: CustomCard[]
 }
 
@@ -80,8 +81,8 @@ export const getWinner = async (
   // assume the hand has went to showdown (multiple players, 5 community cards, bets in)
   const formattedPaticipants = participants.map(participant => ({
     ...participant,
-    cardOne: formattedCardsForPokerSolver(participant.cardOne),
-    cardTwo: formattedCardsForPokerSolver(participant.cardTwo),
+    cardOne: formattedCards(participant.cardOne),
+    cardTwo: formattedCards(participant.cardTwo),
   }))
 
   const currentMatch = await getMatchById(formattedPaticipants[0].matchId)
@@ -90,9 +91,7 @@ export const getWinner = async (
     return null
   }
 
-  const board = currentMatch.board.map(item =>
-    formattedCardsForPokerSolver(item)
-  )
+  const board = currentMatch.board.map(item => formattedCards(item))
 
   let winner = formattedPaticipants[0]
 
@@ -121,17 +120,21 @@ export const getWinner = async (
         ties.push({
           id: winner.id,
           handName: winnerHand.name,
-          winnerHand: winnerHand.cards.map(card =>
-            unformatCardsForPokerSolver(card)
-          ),
+          bestHand: winnerHand.cards.map(card => unformatCards(card)),
+          winnerHand: [
+            unformatCards(winner.cardOne),
+            unformatCards(winner.cardTwo),
+          ],
         })
       }
       ties.push({
         id: participant.id,
         handName: participantHand.name,
-        winnerHand: participantHand.cards.map(card =>
-          unformatCardsForPokerSolver(card)
-        ),
+        bestHand: participantHand.cards.map(card => unformatCards(card)),
+        winnerHand: [
+          unformatCards(participant.cardOne),
+          unformatCards(participant.cardTwo),
+        ],
       })
     } // else, the winner is still the winner
   }
@@ -145,9 +148,11 @@ export const getWinner = async (
     {
       id: winner.id,
       handName: winnerHand.name,
-      winnerHand: winnerHand.cards.map(card =>
-        unformatCardsForPokerSolver(card)
-      ),
+      bestHand: winnerHand.cards.map(card => unformatCards(card)),
+      winnerHand: [
+        unformatCards(winner.cardOne),
+        unformatCards(winner.cardTwo),
+      ],
     },
   ]
 

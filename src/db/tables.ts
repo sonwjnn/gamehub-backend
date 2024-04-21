@@ -2,12 +2,7 @@ import { db } from '../lib/db'
 import { Match, Participant, Player, Prisma } from '@prisma/client'
 import { ParticipantWithPlayerAndCards, TableWithPlayers } from '../types'
 import { PokerActions } from '../pokergame/actions'
-import {
-  formattedCardsForPokerSolver,
-  getBestHand,
-  getWinner,
-  unformatCardsForPokerSolver,
-} from './poker'
+import { formattedCards, getBestHand, getWinner, unformatCards } from './poker'
 
 // Table Actions
 export const getTables = async () => {
@@ -134,20 +129,29 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayerAndCards) => {
       },
     })
 
-    const winnerHand = getBestHand([
-      ...currentMatch.board.map(card => formattedCardsForPokerSolver(card)),
-      formattedCardsForPokerSolver(winner.cardOne),
-      formattedCardsForPokerSolver(winner.cardTwo),
+    const winnerCardOne = formattedCards(winner.cardOne)
+    const winnerCardTwo = formattedCards(winner.cardTwo)
+
+    const bestHand = getBestHand([
+      ...currentMatch.board.map(card => formattedCards(card)),
+      winnerCardOne,
+      winnerCardTwo,
     ])
+
+    const winnerHand = [winnerCardOne, winnerCardTwo]
 
     await db.winMessages.create({
       data: {
+        userId: winnerPlayer.userId,
         matchId: winner.matchId,
-        content: `${winnerPlayer.user.username} wins $${currentMatch.pot} with ${winnerHand.name}`,
+        content: `${winnerPlayer.user.username} wins $${currentMatch.pot} with ${bestHand.name}`,
         amount: currentMatch.pot,
-        handName: winnerHand.name,
+        handName: bestHand.name,
+        bestHand: {
+          connect: bestHand.cards.map(card => ({ id: card.id })),
+        },
         winnerHand: {
-          connect: winnerHand.cards.map(card => ({ id: card.id })),
+          connect: winnerHand.map(card => ({ id: card.id })),
         },
       },
     })
@@ -403,10 +407,14 @@ const determineWinner = async (matchId: string, amount: number) => {
 
     await db.winMessages.create({
       data: {
+        userId: player.userId,
         matchId,
         content: `${player.user.username} wins $${amount} with ${winnerFirst.handName}`,
         amount,
         handName: winnerFirst.handName,
+        bestHand: {
+          connect: winnerFirst.bestHand.map(card => ({ id: card.id })),
+        },
         winnerHand: {
           connect: winnerFirst.winnerHand.map(card => ({ id: card.id })),
         },

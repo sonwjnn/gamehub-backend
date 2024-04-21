@@ -30,11 +30,13 @@ model User {
   role        UserRole @default(USER)
   chipsAmount Int      @default(30000)
 
-  tables    Table[]
-  players   Player[]
-  banks     Bank[]
-  recharges Recharge[]
-  withdraws Withdraw[]
+  tables        Table[]
+  players       Player[]
+  banks         Bank[]
+  loseHistories LoseHistory[]
+  winMessages   WinMessages[]
+  recharges     Recharge[]
+  withdraws     Withdraw[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
@@ -67,7 +69,7 @@ model Table {
 
   decks Deck[]
 
-  histories History[]
+  deleted Boolean @default(false) @map(name: "on_deleted")
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
@@ -82,14 +84,39 @@ model WinMessages {
   matchId String @map(name: "match_id")
   match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
-  content    String
-  handName   String @map(name: "hand_name")
-  amount     Int
-  winnerHand Card[]
+  userId String @map(name: "user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content  String
+  handName String @map(name: "hand_name")
+  amount   Int
+
+  bestHand   Card[] @relation("BestHandCards")
+  winnerHand Card[] @relation("WinnerHandCards")
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 
   @@map(name: "winner_messages")
+}
+
+model LoseHistory {
+  id String @id @default(cuid())
+
+  matchId String @map(name: "match_id")
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  userId String @map(name: "user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  handName String @map(name: "hand_name")
+  amount   Int
+
+  worstHand Card[] @relation("WorstHandCards")
+  loserHand Card[] @relation("LoserHandCards")
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
+  @@map(name: "lose_histories")
 }
 
 enum CardRank {
@@ -120,29 +147,19 @@ model Card {
   rank CardRank
   suit CardSuit
 
-  decks     Deck[]
-  matches   Match[]
-  bestHands WinMessages[]
+  decks   Deck[]
+  matches Match[]
+
+  bestHands  WinMessages[] @relation("BestHandCards")
+  winnerHand WinMessages[] @relation("WinnerHandCards")
+
+  worstHands LoseHistory[] @relation("WorstHandCards")
+  loserHand  LoseHistory[] @relation("LoserHandCards")
 
   participantOne Participant[] @relation("CardOne")
   participantTwo Participant[] @relation("CardTwo")
 
   @@map(name: "cards")
-}
-
-model History {
-  id String @id @default(cuid())
-
-  tableId String @map(name: "table_id")
-  table   Table  @relation(fields: [tableId], references: [id])
-
-  content String
-  deleted Boolean @default(false)
-
-  createdAt DateTime @default(now()) @map(name: "created_at")
-
-  @@index([tableId])
-  @@map(name: "histories")
 }
 
 model Player {
@@ -320,9 +337,10 @@ model Match {
   bigBlindId String? @map(name: "big_blind_id")
   bigBlind   Player? @relation("BigBlindPlayer", fields: [bigBlindId], references: [id])
 
-  participants Participant[]
-  sidePots     SidePot[]
-  winMessages  WinMessages[]
+  participants  Participant[]
+  sidePots      SidePot[]
+  winMessages   WinMessages[]
+  loseHistories LoseHistory[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 

@@ -11,6 +11,7 @@ import withdraws from './withdraws'
 import recharges from './recharges'
 import socket from './socket'
 import matches from './matches'
+import histories from './histories'
 
 import usersAdmin from './admin/users'
 
@@ -29,6 +30,7 @@ export default (): express.Router => {
   router.use('/api/recharges', recharges())
   router.use('/api/socket', socket())
   router.use('/api/matches', matches())
+  router.use('/api/histories', histories())
 
   // api routes for admin
   router.use('/api/admin/users', usersAdmin())
