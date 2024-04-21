@@ -120,21 +120,15 @@ export const getWinner = async (
         ties.push({
           id: winner.id,
           handName: winnerHand.name,
-          bestHand: winnerHand.cards.map(card => unformatCards(card)),
-          winnerHand: [
-            unformatCards(winner.cardOne),
-            unformatCards(winner.cardTwo),
-          ],
+          bestHand: winnerHand.cards,
+          winnerHand: [winner.cardOne, winner.cardTwo],
         })
       }
       ties.push({
         id: participant.id,
         handName: participantHand.name,
-        bestHand: participantHand.cards.map(card => unformatCards(card)),
-        winnerHand: [
-          unformatCards(participant.cardOne),
-          unformatCards(participant.cardTwo),
-        ],
+        bestHand: participantHand.cards,
+        winnerHand: [participant.cardOne, participant.cardTwo],
       })
     } // else, the winner is still the winner
   }

@@ -324,6 +324,7 @@ const init = ({ socket, io }: IInIt) => {
           winMessages: {
             include: {
               winnerHand: true,
+              bestHand: true,
             },
             orderBy: {
               createdAt: 'desc',
