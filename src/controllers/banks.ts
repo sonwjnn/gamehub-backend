@@ -32,6 +32,22 @@ const deleteBankById = async (req: Request, res: Response) => {
 
 const updateBankById = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params
+    const { cardNumber, securityCode, cardHolderName, expiryDate } = req.body
+
+    await db.bank.update({
+      where: {
+        id,
+      },
+      data: {
+        cardNumber,
+        securityCode,
+        cardHolderName,
+        expiryDate,
+      },
+    })
+
+    responseHandler.ok(res)
   } catch (error) {
     responseHandler.error(res)
   }
@@ -39,9 +55,16 @@ const updateBankById = async (req: Request, res: Response) => {
 
 const createBank = async (req: Request, res: Response) => {
   try {
+    const { cardNumber, securityCode, cardHolderName, expiryDate, userId } =
+      req.body
+
     const bank = await db.bank.create({
       data: {
-        ...req.body,
+        cardNumber,
+        securityCode,
+        cardHolderName,
+        expiryDate,
+        userId,
       },
     })
 
@@ -64,10 +87,27 @@ const getBank = async (req: Request, res: Response) => {
   }
 }
 
+const getBankByUserId = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params
+
+    const bank = await db.bank.findFirst({
+      where: {
+        userId,
+      },
+    })
+
+    responseHandler.ok(res, bank)
+  } catch (error) {
+    responseHandler.error(res)
+  }
+}
+
 export default {
   getBank,
   createBank,
   getAllBanks,
   deleteBankById,
   updateBankById,
+  getBankByUserId,
 }

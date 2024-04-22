@@ -64,10 +64,27 @@ const getWithdraw = async (req: Request, res: Response) => {
   }
 }
 
+const getAllByBankId = async (req: Request, res: Response) => {
+  try {
+    const { bankId } = req.params
+
+    const withdraws = await db.withdraw.findMany({
+      where: {
+        bankId,
+      },
+    })
+
+    responseHandler.ok(res, withdraws)
+  } catch (error) {
+    responseHandler.error(res)
+  }
+}
+
 export default {
   getWithdraw,
   createWithdraw,
   getAllWithdraws,
   deleteWithdrawById,
   updateWithdrawById,
+  getAllByBankId,
 }

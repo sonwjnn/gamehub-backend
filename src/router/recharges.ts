@@ -8,6 +8,7 @@ const router = express.Router({ mergeParams: true })
 export default (): express.Router => {
   router.get('/', rechargeController.getAllRecharges)
   router.get('/:id', rechargeController.getRecharge)
+  router.get('/bank/:bankId', rechargeController.getAllByBankId)
   router.post('/', rechargeController.createRecharge)
   router.delete('/:id', rechargeController.deleteRechargeById)
   router.put(

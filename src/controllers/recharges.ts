@@ -64,10 +64,27 @@ const getRecharge = async (req: Request, res: Response) => {
   }
 }
 
+const getAllByBankId = async (req: Request, res: Response) => {
+  try {
+    const { bankId } = req.params
+
+    const recharges = await db.recharge.findMany({
+      where: {
+        bankId,
+      },
+    })
+
+    responseHandler.ok(res, recharges)
+  } catch (error) {
+    responseHandler.error(res)
+  }
+}
+
 export default {
   getRecharge,
   createRecharge,
   getAllRecharges,
   deleteRechargeById,
   updateRechargeById,
+  getAllByBankId,
 }

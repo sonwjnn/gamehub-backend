@@ -7,6 +7,7 @@ const router = express.Router({ mergeParams: true })
 
 export default (): express.Router => {
   router.get('/', withdrawController.getAllWithdraws)
+  router.get('/bank/:bankId', withdrawController.getAllByBankId)
   router.get('/:id', withdrawController.getWithdraw)
   router.post('/', withdrawController.createWithdraw)
   router.delete('/:id', withdrawController.deleteWithdrawById)

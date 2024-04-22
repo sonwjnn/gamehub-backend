@@ -35,8 +35,6 @@ model User {
   banks         Bank[]
   loseHistories LoseHistory[]
   winMessages   WinMessages[]
-  recharges     Recharge[]
-  withdraws     Withdraw[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
@@ -232,37 +230,50 @@ model Event {
 model Bank {
   id String @id @default(cuid())
 
-  name       String
-  user_id    String   @map(name: "user_id")
-  user       User     @relation(fields: [user_id], references: [id])
-  branch     String
-  number1    String
-  number2    String
-  username   String
-  password   String
-  status     String
-  bankcode   String
-  linkqrcode String
-  createdAt  DateTime @default(now()) @map(name: "created_at")
-  updatedAt  DateTime @updatedAt @map(name: "updated_at")
+  userId String @map(name: "user_id")
+  user   User   @relation(fields: [userId], references: [id])
 
+  cardNumber     String
+  securityCode   String   @map(name: "security_code")
+  cardHolderName String   @map(name: "card_holder_name")
+  expiryDate     DateTime @map(name: "expiry_date")
+
+  bankCode   String? @map(name: "bank_code")
+  branch     String?
+  number1    String?
+  number2    String?
+  linkqrcode String?
+
+  recharges Recharge[]
+  withdraws Withdraw[]
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@unique([userId, cardNumber])
+  @@index([userId])
   @@map(name: "banks")
+}
+
+enum BankActionStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }
 
 model Recharge {
   id String @id @default(cuid())
 
-  userId String @map(name: "user_id")
-  user   User   @relation(fields: [userId], references: [id])
+  bankId String           @map(name: "bank_id")
+  bank   Bank             @relation(fields: [bankId], references: [id])
+  amount Int
+  status BankActionStatus @default(PENDING)
 
-  amount    Int
-  number1   String
-  number2   String
-  branch    String
-  status    String
-  deletedAt DateTime? @map(name: "deleted_at")
-  createdAt DateTime  @default(now()) @map(name: "created_at")
-  updatedAt DateTime  @default(now()) @map(name: "updated_at")
+  number1 String?
+  number2 String?
+  branch  String?
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
 
   @@map(name: "recharges")
 }
@@ -270,20 +281,12 @@ model Recharge {
 model Withdraw {
   id String @id @default(cuid())
 
-  userId String @map(name: "user_id")
-  user   User   @relation(fields: [userId], references: [id])
-
-  cardName  String    @map(name: "card_name")
-  cardCode  String    @map(name: "card_code")
-  amount    Int
-  comment   String
-  token     String
-  isBank    Boolean   @default(false) @map(name: "is_bank")
-  status    String
-  deletedAt DateTime? @map(name: "deleted_at")
+  bankId String           @map(name: "bank_id")
+  bank   Bank             @relation(fields: [bankId], references: [id])
+  amount Int
+  status BankActionStatus @default(PENDING)
 
   createdAt DateTime @default(now()) @map(name: "created_at")
-  updatedAt DateTime @updatedAt @map(name: "updated_at")
 
   @@map(name: "withdraws")
 }
