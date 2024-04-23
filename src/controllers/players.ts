@@ -15,6 +15,26 @@ const getAllPlayers = async (req: Request, res: Response) => {
   }
 }
 
+const getPlayersByTableId = async (req: Request, res: Response) => {
+  try {
+    const { tableId } = req.params
+
+    const players = await db.player.findMany({
+      where: {
+        tableId,
+      },
+      include: {
+        user: true,
+      },
+    })
+
+    responseHandler.ok(res, players)
+  } catch (error) {
+    console.log(error)
+    responseHandler.error(res)
+  }
+}
+
 const removePlayer = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
@@ -245,5 +265,6 @@ export default {
   updatePlayerById,
   getCurrentPlayerOfTable,
   getCurrentPlayerWithoutTable,
+  getPlayersByTableId,
   rebuy,
 }

@@ -8,6 +8,7 @@ const router = express.Router({ mergeParams: true })
 export default (): express.Router => {
   router.get('/', playerController.getAllPlayers)
   router.get('/:id', playerController.getPlayer)
+  router.get('/table/:tableId', playerController.getPlayersByTableId)
   router.get('/:tableId/:userId', playerController.getCurrentPlayerOfTable)
   router.get(
     '/table/user/:userId',
