@@ -39,9 +39,24 @@ const updateRechargeById = async (req: Request, res: Response) => {
 
 const createRecharge = async (req: Request, res: Response) => {
   try {
+    const { amount, bankId } = req.body
+
+    const requestingRecharge = await db.recharge.findFirst({
+      where: {
+        bankId,
+        status: 'PENDING',
+      },
+    })
+
+    if (requestingRecharge) {
+      responseHandler.badrequest(res, 'You have a pending recharge request')
+      return
+    }
+
     const recharge = await db.recharge.create({
       data: {
-        ...req.body,
+        amount,
+        bankId,
       },
     })
 
