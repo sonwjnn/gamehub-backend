@@ -538,40 +538,23 @@ const updatePlayerTurn = async (table: TableWithPlayers, playerId: string) => {
   }
 }
 
-const findNextPlayerUnfolded = (
-  table: TableWithPlayers,
-  currentPlayer: Player,
-  unfoldedParticipants: Participant[]
+const findNextUnfoldedPlayer = (
+  players: Player[],
+  playerId: string,
+  places: number
 ) => {
-  const sortedOrderByTablePlayers = unfoldedParticipants.sort((a, b) => {
-    const playerAIndex = table.players.findIndex(
-      player => player.id === a.playerId
-    )
-    const playerBIndex = table.players.findIndex(
-      player => player.id === b.playerId
-    )
+  try {
+    const player = players.findIndex(player => player.id === playerId)
 
-    if (playerAIndex > playerBIndex) {
-      return 1
-    } else if (playerAIndex < playerBIndex) {
-      return -1
-    } else {
-      return 0
-    }
-  })
+    const nextPlayer =
+      player + places >= players.length
+        ? player + places - players.length
+        : player + places
 
-  //normal case
-  const nextPlayerIndex =
-    sortedOrderByTablePlayers.findIndex(
-      player => player.playerId === currentPlayer.id
-    ) + 1
-
-  const nextPlayer =
-    nextPlayerIndex === unfoldedParticipants.length
-      ? unfoldedParticipants[0]
-      : unfoldedParticipants[nextPlayerIndex]
-
-  return nextPlayer.playerId
+    return players[nextPlayer].id
+  } catch {
+    return ''
+  }
 }
 
 export const findNextActivePlayer = async (
@@ -674,6 +657,18 @@ export const changeTurn = async (
       return ''
     }
 
+    const unfoldedPlayers = await db.player.findMany({
+      where: {
+        tableId: table.id,
+        participants: {
+          some: {
+            isFolded: false,
+            matchId: currentMatch.id,
+          },
+        },
+      },
+    })
+
     const unfoldedParticipants = (await getUnfoldedParticipants(
       participant.matchId
     )) as ParticipantWithPlayerAndCards[]
@@ -714,10 +709,10 @@ export const changeTurn = async (
       })
 
       if (!currentTable?.handOver) {
-        const nextPlayerId = findNextPlayerUnfolded(
-          table,
-          currentPlayer,
-          unfoldedParticipants
+        const nextPlayerId = findNextUnfoldedPlayer(
+          unfoldedPlayers,
+          currentMatch.buttonId as string,
+          1
         )
 
         await updatePlayerTurn(table, nextPlayerId)
@@ -727,10 +722,10 @@ export const changeTurn = async (
       return ''
     }
 
-    const nextPlayerId = findNextPlayerUnfolded(
-      table,
-      currentPlayer,
-      unfoldedParticipants
+    const nextPlayerId = findNextUnfoldedPlayer(
+      unfoldedPlayers,
+      currentPlayer.id,
+      1
     )
 
     await db.player.update({
