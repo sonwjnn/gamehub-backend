@@ -39,9 +39,23 @@ const updateWithdrawById = async (req: Request, res: Response) => {
 
 const createWithdraw = async (req: Request, res: Response) => {
   try {
+    const {amount, bankId} = req.body
+
+    const requestingWithdraw = await db.withdraw.findFirst({
+      where: {
+        bankId,
+        status:"PENDING"
+      },
+    })
+
+    if(requestingWithdraw) {
+      responseHandler.badrequest(res, "You have a pending withdraw request")
+      return
+    }
+
     const withdraw = await db.withdraw.create({
       data: {
-        ...req.body,
+        amount, bankId
       },
     })
 
