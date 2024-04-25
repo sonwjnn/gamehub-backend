@@ -129,7 +129,6 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayerAndCards) => {
       },
       data: {
         winnerId: winner.playerId,
-        isShowdown: true,
       },
     })
 
@@ -714,7 +713,11 @@ export const changeTurn = async (
 
       await dealNextStreet(participant.matchId)
 
-      const updatedTable = await getTableById(table.id)
+      const updatedTable = await db.table.findUnique({
+        where: {
+          id: table.id,
+        },
+      })
 
       if (!updatedTable?.handOver) {
         const nextPlayerId = findNextUnfoldedPlayer(
