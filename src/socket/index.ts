@@ -242,7 +242,7 @@ const init = ({ socket, io }: IInIt) => {
     if (!table) return null
 
     if (table.players.length > 1) {
-      broadcastToTable(table, 'New match starting in 10 seconds')
+      broadcastToTable(table, 'New match starting in 8 seconds')
     }
 
     setTimeout(async () => {
