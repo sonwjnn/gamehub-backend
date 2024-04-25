@@ -59,7 +59,7 @@ const init = ({ socket, io }: IInIt) => {
 
       if (table?.players.length === 2) {
         // start game
-        initNewMatch(table, DELAY_BETWEEN_MATCHES)
+        await initNewMatch(table, DELAY_BETWEEN_MATCHES)
       }
     }
   )
@@ -359,7 +359,7 @@ const init = ({ socket, io }: IInIt) => {
 
         if (!updatedTable || updatedTable.players.length <= 1) return null
 
-        initNewMatch(updatedTable, DELAY_BETWEEN_MATCHES)
+        await initNewMatch(updatedTable, DELAY_BETWEEN_MATCHES)
       }
     }, 1000)
   }

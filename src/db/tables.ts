@@ -714,24 +714,15 @@ export const changeTurn = async (
 
       await dealNextStreet(participant.matchId)
 
-      const currentTable = await db.table.findUnique({
-        where: {
-          id: table.id,
-        },
-      })
+      const nextPlayerId = findNextUnfoldedPlayer(
+        filteredPlayers,
+        currentMatch.buttonId as string,
+        1
+      )
 
-      if (!currentTable?.handOver) {
-        const nextPlayerId = findNextUnfoldedPlayer(
-          filteredPlayers,
-          currentMatch.buttonId as string,
-          1
-        )
+      await updatePlayerTurn(table, nextPlayerId)
 
-        await updatePlayerTurn(table, nextPlayerId)
-
-        return nextPlayerId
-      }
-      return ''
+      return nextPlayerId
     }
 
     const nextPlayerId = findNextUnfoldedPlayer(
@@ -740,28 +731,9 @@ export const changeTurn = async (
       1
     )
 
-    await db.player.update({
-      where: {
-        id: currentPlayer.id,
-      },
-      data: {
-        isTurn: false,
-      },
-    })
+    await updatePlayerTurn(table, nextPlayerId)
 
-    const updatedNextPlayer = await db.player.update({
-      where: {
-        id: nextPlayerId,
-      },
-      data: {
-        isTurn: true,
-      },
-      include: {
-        user: true,
-      },
-    })
-
-    return updatedNextPlayer.id
+    return nextPlayerId
   } catch (error) {
     return ''
   }
