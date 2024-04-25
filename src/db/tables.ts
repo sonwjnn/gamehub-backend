@@ -714,15 +714,20 @@ export const changeTurn = async (
 
       await dealNextStreet(participant.matchId)
 
-      const nextPlayerId = findNextUnfoldedPlayer(
-        filteredPlayers,
-        currentMatch.buttonId as string,
-        1
-      )
+      const updatedTable = await getTableById(table.id)
 
-      await updatePlayerTurn(table, nextPlayerId)
+      if (!updatedTable?.handOver) {
+        const nextPlayerId = findNextUnfoldedPlayer(
+          filteredPlayers,
+          currentMatch.buttonId as string,
+          1
+        )
 
-      return nextPlayerId
+        await updatePlayerTurn(table, nextPlayerId)
+
+        return nextPlayerId
+      }
+      return ''
     }
 
     const nextPlayerId = findNextUnfoldedPlayer(
