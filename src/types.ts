@@ -183,3 +183,7 @@ export type ParticipantWithPlayer = Participant & { player: PlayerWithUser }
 export type ParticipantWithPlayerAndCards = ParticipantWithCards & {
   player: PlayerWithUser
 }
+
+export type PlayerWithParticipants = Player & {
+  participants: Participant[]
+}

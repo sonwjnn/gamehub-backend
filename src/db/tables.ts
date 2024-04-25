@@ -1,6 +1,10 @@
 import { db } from '../lib/db'
 import { Match, Participant, Player, Prisma } from '@prisma/client'
-import { ParticipantWithPlayerAndCards, TableWithPlayers } from '../types'
+import {
+  ParticipantWithPlayerAndCards,
+  PlayerWithParticipants,
+  TableWithPlayers,
+} from '../types'
 import { PokerActions } from '../pokergame/actions'
 import { formattedCards, getBestHand, getWinner, unformatCards } from './poker'
 
@@ -539,22 +543,21 @@ const updatePlayerTurn = async (table: TableWithPlayers, playerId: string) => {
 }
 
 const findNextUnfoldedPlayer = (
-  players: Player[],
+  players: PlayerWithParticipants[],
   playerId: string,
   places: number
 ) => {
-  try {
-    const player = players.findIndex(player => player.id === playerId)
+  let i = 0
+  let current = players.findIndex(player => player.id === playerId)
 
-    const nextPlayer =
-      player + places >= players.length
-        ? player + places - players.length
-        : player + places
+  while (i < places) {
+    current = current === players.length - 1 ? 0 : current + 1
+    let hand = players[current].participants[0]
 
-    return players[nextPlayer].id
-  } catch {
-    return ''
+    if (hand && !hand.isFolded) i++
   }
+
+  return players[current].id
 }
 
 export const findNextActivePlayer = async (
@@ -657,17 +660,26 @@ export const changeTurn = async (
       return ''
     }
 
-    const unfoldedPlayers = await db.player.findMany({
+    const players = await db.player.findMany({
       where: {
         tableId: table.id,
         participants: {
           some: {
-            isFolded: false,
             matchId: currentMatch.id,
           },
         },
       },
+      include: {
+        participants: true,
+      },
     })
+
+    const filteredPlayers = players.map(player => ({
+      ...player,
+      participants: player.participants.filter(
+        participant => participant.matchId === currentMatch.id
+      ),
+    }))
 
     const unfoldedParticipants = (await getUnfoldedParticipants(
       participant.matchId
@@ -710,7 +722,7 @@ export const changeTurn = async (
 
       if (!currentTable?.handOver) {
         const nextPlayerId = findNextUnfoldedPlayer(
-          unfoldedPlayers,
+          filteredPlayers,
           currentMatch.buttonId as string,
           1
         )
@@ -723,7 +735,7 @@ export const changeTurn = async (
     }
 
     const nextPlayerId = findNextUnfoldedPlayer(
-      unfoldedPlayers,
+      filteredPlayers,
       currentPlayer.id,
       1
     )
