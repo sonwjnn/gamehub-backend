@@ -195,7 +195,7 @@ const init = ({ socket, io }: IInIt) => {
     try {
       const players = table.players.filter(p => p.leaveNextMatch)
 
-      if (!players) return null
+      if (!players) return table
 
       for (const player of players) {
         await db.user.update({
