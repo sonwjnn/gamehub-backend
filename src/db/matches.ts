@@ -82,17 +82,17 @@ export const createMatch = async (table: TableWithPlayers) => {
     let lastButtonId = oldMatch ? oldMatch.buttonId : ''
 
     if (lastButtonId) {
-      buttonId = await findNextActivePlayer(table.players, lastButtonId, 1)
+      buttonId = findNextActivePlayer(table.players, lastButtonId, 1)
     }
 
     // set blinds
     const isHeadUp = table.players.length === 2
     const smallBlindId = isHeadUp
       ? buttonId
-      : await findNextActivePlayer(table.players, buttonId, 1)
+      : findNextActivePlayer(table.players, buttonId, 1)
     const bigBlindId = isHeadUp
-      ? await findNextActivePlayer(table.players, buttonId, 1)
-      : await findNextActivePlayer(table.players, buttonId, 2)
+      ? findNextActivePlayer(table.players, buttonId, 1)
+      : findNextActivePlayer(table.players, buttonId, 2)
 
     const minBet = table.minBuyIn / 200
     const pot = minBet * 3
@@ -164,7 +164,7 @@ export const createMatch = async (table: TableWithPlayers) => {
     const turnPlayerId =
       table.players.length <= 3
         ? buttonId
-        : await findNextActivePlayer(table.players, buttonId, 3)
+        : findNextActivePlayer(table.players, buttonId, 3)
     const updatedPlayer = await db.player.update({
       where: {
         id: turnPlayerId,
@@ -200,7 +200,8 @@ export const createMatch = async (table: TableWithPlayers) => {
     })) as MatchWithParticipants
 
     return { match: newMatch, playerId: updatedPlayer.id }
-  } catch {
+  } catch (error) {
+    console.log(error)
     return { match: null, playerId: null }
   }
 }

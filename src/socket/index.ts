@@ -37,7 +37,7 @@ interface IInIt {
   >
 }
 
-const DELAY_BETWEEN_MATCHES = 10000
+const DELAY_BETWEEN_MATCHES = 8000
 
 const init = ({ socket, io }: IInIt) => {
   socket.on(
@@ -247,9 +247,14 @@ const init = ({ socket, io }: IInIt) => {
 
     setTimeout(async () => {
       // table.clearWinMessages();
+      broadcastToTable(table, ' Before call api create match ')
+
       const { match, playerId } = await createMatch(table)
 
-      if (!match || !playerId) return
+      if (!match || !playerId) {
+        broadcastToTable(table, ' Match and playerId is null ')
+        return
+      }
 
       broadcastToTable(table, ' New match started ')
       for (let i = 0; i < table.players.length; i++) {

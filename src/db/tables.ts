@@ -560,7 +560,7 @@ const findNextUnfoldedPlayer = (
   return players[current].id
 }
 
-export const findNextActivePlayer = async (
+export const findNextActivePlayer = (
   players: Player[],
   playerId: string,
   places: number
