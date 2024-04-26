@@ -816,7 +816,7 @@ const calculateSidePots = async (matchId: string) => {
               },
             })
 
-            if (!lastSidePot) throw new Error('No last side pot found')
+            if (!lastSidePot) return null
 
             if (lastSidePot.amount > 0) {
               await db.sidePot.update({
@@ -859,7 +859,6 @@ const calculateSidePots = async (matchId: string) => {
       }
     }
   } catch (error) {
-    console.log(error)
-    throw error
+    return null
   }
 }

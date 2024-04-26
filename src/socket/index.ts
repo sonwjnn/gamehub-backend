@@ -245,29 +245,35 @@ const init = ({ socket, io }: IInIt) => {
       broadcastToTable(table, 'New match starting in 8 seconds')
     }
 
-    setTimeout(async () => {
-      // table.clearWinMessages();
-      broadcastToTable(table, ' Before call api create match ')
+    let elapsed = 0
+    const interval = setInterval(async () => {
+      elapsed += 1000 // assuming this function is called every 1 second
+      if (elapsed >= (delay || 10000)) {
+        clearInterval(interval)
 
-      const { match, playerId } = await createMatch(table)
+        // table.clearWinMessages();
+        // broadcastToTable(table, ' Before call api create match ');
 
-      if (!match || !playerId) {
-        broadcastToTable(table, ' Match and playerId is null ')
-        return
+        const { match, playerId } = await createMatch(table)
+
+        if (!match || !playerId) {
+          // broadcastToTable(table, ' Match and playerId is null ');
+          return
+        }
+
+        broadcastToTable(table, ' New match started ')
+        for (let i = 0; i < table.players.length; i++) {
+          let socketId = table.players[i].socketId as string
+
+          // let tableCopy = hideOpponentCards(table, socketId);
+          io.to(socketId).emit(PokerActions.MATCH_STARTED, {
+            tableId: table.id,
+            match,
+            playerId,
+          })
+        }
       }
-
-      broadcastToTable(table, ' New match started ')
-      for (let i = 0; i < table.players.length; i++) {
-        let socketId = table.players[i].socketId as string
-
-        // let tableCopy = hideOpponentCards(table, socketId)
-        io.to(socketId).emit(PokerActions.MATCH_STARTED, {
-          tableId: table.id,
-          match,
-          playerId,
-        })
-      }
-    }, delay || 10000)
+    }, 1000) // check every 1 second
   }
 
   const broadcastToTable = (
@@ -360,11 +366,11 @@ const init = ({ socket, io }: IInIt) => {
 
       // end match
       if (currentMatch?.table.handOver) {
-        const updatedTable = await clearPlayerLeaveChecked(currentMatch?.table)
+        // const updatedTable = await clearPlayerLeaveChecked(currentMatch?.table)
 
-        if (!updatedTable || updatedTable.players.length <= 1) return null
+        // if (!updatedTable || updatedTable.players.length <= 1) return null
 
-        await initNewMatch(updatedTable, DELAY_BETWEEN_MATCHES)
+        await initNewMatch(currentMatch?.table, DELAY_BETWEEN_MATCHES)
       }
     }, 1000)
   }
