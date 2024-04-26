@@ -59,7 +59,7 @@ const init = ({ socket, io }: IInIt) => {
 
       if (table?.players.length === 2) {
         // start game
-        await initNewMatch(table, DELAY_BETWEEN_MATCHES)
+        await initNewMatch(table.id, DELAY_BETWEEN_MATCHES)
       }
     }
   )
@@ -238,7 +238,9 @@ const init = ({ socket, io }: IInIt) => {
     }
   }
 
-  const initNewMatch = async (table: TableWithPlayers, delay: number) => {
+  const initNewMatch = async (tableId: string, delay: number) => {
+    const table = await getTableById(tableId)
+
     if (!table) return null
 
     if (table.players.length > 1) {
@@ -254,7 +256,7 @@ const init = ({ socket, io }: IInIt) => {
         // table.clearWinMessages();
         // broadcastToTable(table, ' Before call api create match ');
 
-        const { match, playerId } = await createMatch(table)
+        const { match, playerId } = await createMatch(tableId)
 
         if (!match || !playerId) {
           // broadcastToTable(table, ' Match and playerId is null ');
@@ -377,7 +379,7 @@ const init = ({ socket, io }: IInIt) => {
 
         // end match
         if (currentMatch?.table.handOver) {
-          await initNewMatch(currentMatch?.table, DELAY_BETWEEN_MATCHES)
+          await initNewMatch(currentMatch?.table.id, DELAY_BETWEEN_MATCHES)
         }
       }
     }, 1000)

@@ -564,18 +564,16 @@ export const findNextActivePlayer = (
   playerId: string,
   places: number
 ) => {
-  try {
-    const player = players.findIndex(player => player.id === playerId)
+  let player = players.findIndex(player => player.id === playerId)
 
-    const nextPlayer =
-      player + places >= players.length
-        ? player + places - players.length
-        : player + places
+  if (player === -1) player = 0
 
-    return players[nextPlayer].id
-  } catch {
-    return ''
-  }
+  const nextPlayer =
+    player + places >= players.length
+      ? player + places - players.length
+      : player + places
+
+  return players[nextPlayer].id
 }
 
 export const placeBlinds = async (
