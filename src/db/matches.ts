@@ -207,7 +207,7 @@ export const createMatch = async (tableId: string) => {
       },
     })) as MatchWithParticipants
 
-    return { match: newMatch, playerId: updatedPlayer.id }
+    return { match: newMatch, playerId: updatedPlayer.id, table: table }
   } catch (error) {
     console.log(error)
     return { match: null, playerId: null }

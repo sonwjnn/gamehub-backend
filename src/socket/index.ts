@@ -256,16 +256,16 @@ const init = ({ socket, io }: IInIt) => {
         // table.clearWinMessages();
         // broadcastToTable(table, ' Before call api create match ');
 
-        const { match, playerId } = await createMatch(tableId)
+        const { match, playerId, table: newTable } = await createMatch(tableId)
 
-        if (!match || !playerId) {
+        if (!match || !playerId || !table) {
           // broadcastToTable(table, ' Match and playerId is null ');
           return
         }
 
-        broadcastToTable(table, ' New match started ')
-        for (let i = 0; i < table.players.length; i++) {
-          let socketId = table.players[i].socketId as string
+        broadcastToTable(newTable, ' New match started ')
+        for (let i = 0; i < newTable.players.length; i++) {
+          let socketId = newTable.players[i].socketId as string
 
           // let tableCopy = hideOpponentCards(table, socketId);
           io.to(socketId).emit(PokerActions.MATCH_STARTED, {
