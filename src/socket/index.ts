@@ -303,74 +303,82 @@ const init = ({ socket, io }: IInIt) => {
     table: TableWithPlayers,
     participant: Participant
   ) => {
-    setTimeout(async () => {
-      const playerId = await changeTurn(table, participant)
+    let elapsed = 0
+    const interval = setInterval(async () => {
+      elapsed += 1000 // assuming this function is called every 1 second
+      if (elapsed >= 1000) {
+        clearInterval(interval)
 
-      const currentMatch = await db.match.findUnique({
-        where: {
-          id: participant.matchId,
-        },
-        include: {
-          table: {
-            include: {
-              players: {
-                include: {
-                  user: true,
+        const playerId = await changeTurn(table, participant)
+
+        const currentMatch = await db.match.findUnique({
+          where: {
+            id: participant.matchId,
+          },
+          include: {
+            table: {
+              include: {
+                players: {
+                  include: {
+                    user: true,
+                  },
                 },
               },
             },
-          },
-          board: true,
-          participants: {
-            include: {
-              player: {
-                include: {
-                  user: true,
+            board: true,
+            participants: {
+              include: {
+                player: {
+                  include: {
+                    user: true,
+                  },
                 },
+                cardOne: true,
+                cardTwo: true,
               },
-              cardOne: true,
-              cardTwo: true,
+            },
+            winMessages: {
+              include: {
+                winnerHand: true,
+                bestHand: true,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
             },
           },
-          winMessages: {
-            include: {
-              winnerHand: true,
-              bestHand: true,
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
-          },
-        },
-      })
-
-      const newPlayers = currentMatch?.table?.players || []
-
-      for (let i = 0; i < newPlayers.length; i++) {
-        let socketId = newPlayers[i].socketId as string
-        // let tableCopy = hideOpponentCards(table, socketId)
-        io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
-          tableId: table.id,
-          players: newPlayers,
         })
-      }
 
-      for (let i = 0; i < newPlayers.length; i++) {
-        let socketId = newPlayers[i].socketId as string
-        // let tableCopy = hideOpponentCards(table, socketId)
-        io.to(socketId).emit(PokerActions.CHANGE_TURN, {
-          match: currentMatch,
-          playerId,
-        })
-      }
+        const newPlayers = currentMatch?.table?.players || []
 
-      // end match
-      if (currentMatch?.table.handOver) {
-        // const updatedTable = await clearPlayerLeaveChecked(currentMatch?.table)
+        for (let i = 0; i < newPlayers.length; i++) {
+          let socketId = newPlayers[i].socketId as string
+          io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
+            tableId: table.id,
+            players: newPlayers.map(item => {
+              if (item.id === playerId) {
+                return {
+                  ...item,
+                  isTurn: true,
+                }
+              }
+              return { ...item, isTurn: false }
+            }),
+          })
+        }
 
-        // if (!updatedTable || updatedTable.players.length <= 1) return null
+        for (let i = 0; i < newPlayers.length; i++) {
+          let socketId = newPlayers[i].socketId as string
+          io.to(socketId).emit(PokerActions.CHANGE_TURN, {
+            match: currentMatch,
+            playerId,
+          })
+        }
 
-        await initNewMatch(currentMatch?.table, DELAY_BETWEEN_MATCHES)
+        // end match
+        if (currentMatch?.table.handOver) {
+          await initNewMatch(currentMatch?.table, DELAY_BETWEEN_MATCHES)
+        }
       }
     }, 1000)
   }
