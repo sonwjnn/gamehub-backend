@@ -4,7 +4,11 @@ import { Prisma } from '@prisma/client'
 // Bank Actions
 export const getBanks = async () => {
   try {
-    const bank = await db.bank.findMany()
+    const bank = await db.bank.findMany({
+      include: {
+        user: true,
+      },
+    })
 
     return bank
   } catch {

@@ -32,6 +32,40 @@ const deleteWithdrawById = async (req: Request, res: Response) => {
 
 const updateWithdrawById = async (req: Request, res: Response) => {
   try {
+    const { amount, status } = req.body
+
+    if (!amount || !status) {
+      responseHandler.badrequest(res, 'Invalid data')
+      return
+    }
+
+    const updatedWithdraw = await db.withdraw.update({
+      where: {
+        id: req.params.id,
+      },
+      data: {
+        status,
+        amount,
+      },
+      include: {
+        bank: true,
+      },
+    })
+
+    if (status === 'SUCCESS') {
+      await db.user.update({
+        where: {
+          id: updatedWithdraw.bank.userId,
+        },
+        data: {
+          chipsAmount: {
+            decrement: amount,
+          },
+        },
+      })
+    }
+
+    responseHandler.ok(res, updatedWithdraw)
   } catch (error) {
     responseHandler.error(res)
   }
@@ -39,23 +73,24 @@ const updateWithdrawById = async (req: Request, res: Response) => {
 
 const createWithdraw = async (req: Request, res: Response) => {
   try {
-    const {amount, bankId} = req.body
+    const { amount, bankId } = req.body
 
     const requestingWithdraw = await db.withdraw.findFirst({
       where: {
         bankId,
-        status:"PENDING"
+        status: 'PENDING',
       },
     })
 
-    if(requestingWithdraw) {
-      responseHandler.badrequest(res, "You have a pending withdraw request")
+    if (requestingWithdraw) {
+      responseHandler.badrequest(res, 'You have a pending withdraw request')
       return
     }
 
     const withdraw = await db.withdraw.create({
       data: {
-        amount, bankId
+        amount,
+        bankId,
       },
     })
 

@@ -4,7 +4,15 @@ import { Prisma } from '@prisma/client'
 // Recharge Actions
 export const getRecharges = async () => {
   try {
-    const recharge = await db.recharge.findMany()
+    const recharge = await db.recharge.findMany({
+      include: {
+        bank: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
 
     return recharge
   } catch {

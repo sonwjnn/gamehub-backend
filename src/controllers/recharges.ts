@@ -32,6 +32,40 @@ const deleteRechargeById = async (req: Request, res: Response) => {
 
 const updateRechargeById = async (req: Request, res: Response) => {
   try {
+    const { amount, status } = req.body
+
+    if (!amount || !status) {
+      responseHandler.badrequest(res, 'Invalid data')
+      return
+    }
+
+    const updatedRecharge = await db.recharge.update({
+      where: {
+        id: req.params.id,
+      },
+      data: {
+        status,
+        amount,
+      },
+      include: {
+        bank: true,
+      },
+    })
+
+    if (status === 'SUCCESS') {
+      await db.user.update({
+        where: {
+          id: updatedRecharge.bank.userId,
+        },
+        data: {
+          chipsAmount: {
+            increment: amount,
+          },
+        },
+      })
+    }
+
+    responseHandler.ok(res, updatedRecharge)
   } catch (error) {
     responseHandler.error(res)
   }

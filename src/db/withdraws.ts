@@ -4,7 +4,15 @@ import { Prisma } from '@prisma/client'
 // Withdraw Actions
 export const getWithdraws = async () => {
   try {
-    const withdraw = await db.withdraw.findMany()
+    const withdraw = await db.withdraw.findMany({
+      include: {
+        bank: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
 
     return withdraw
   } catch {

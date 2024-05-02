@@ -1,6 +1,6 @@
 import { shuffle } from 'lodash'
 import { db } from '../lib/db'
-import { MatchWithParticipants, TableWithPlayers } from '../types'
+import { MatchWithParticipants } from '../types'
 import { findNextActivePlayer, getTableById, placeBlinds } from './tables'
 
 export const getMatches = async () => {
@@ -104,8 +104,6 @@ export const createMatch = async (tableId: string) => {
     const pot = minBet * 3
     const callAmount = minBet * 2
     const minRaise = minBet * 4
-
-    console.log({ buttonId, smallBlindId, bigBlindId })
 
     const match = await db.match.create({
       data: {
