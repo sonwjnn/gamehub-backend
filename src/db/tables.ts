@@ -263,7 +263,7 @@ const isAllCheckedOrCalled = async (currentMatch: Match) => {
       return betMatchesCallAmount || noCallAmountButChecked
     })
   } catch {
-    throw new Error('Check Or Call Error')
+    return null
   }
 }
 

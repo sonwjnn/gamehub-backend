@@ -5,9 +5,24 @@ import { getTableById, getTables, updateTableById } from '../db/tables'
 
 const getAllTables = async (req: Request, res: Response) => {
   try {
-    const tables = await getTables()
+    const { page } = req.query
 
-    responseHandler.ok(res, tables)
+    const tableCount = await db.table.count()
+    const pageCount = Math.ceil(tableCount / 8)
+
+    const tables = await db.table.findMany({
+      include: {
+        players: true,
+        user: true,
+      },
+      skip: page ? (Number(page) - 1) * 8 : 0,
+      take: 8,
+    })
+
+    responseHandler.ok(res, {
+      tables,
+      pageCount,
+    })
   } catch (error) {
     console.log(error)
     responseHandler.error(res)
