@@ -369,8 +369,7 @@ model Participant {
 
   lastAction String @default("") @map(name: "last_action")
 
-  sidePotId String?  @map(name: "side_pot_id")
-  sidePot   SidePot? @relation(fields: [sidePotId], references: [id])
+  sidePots SidePot[]
 
   @@unique([playerId, matchId])
   @@map(name: "participant")
@@ -380,7 +379,7 @@ model SidePot {
   id String @id @default(cuid())
 
   matchId String @map(name: "match_id")
-  match   Match  @relation(fields: [matchId], references: [id])
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   amount Int @default(0)
 

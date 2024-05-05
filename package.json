@@ -11,7 +11,10 @@
     "serve": "node dist/index.js",
     "prettier": "prettier --check \"src/**/(*.ts|*.css|*.scss)\"",
     "prettier:fix": "prettier --write \"src/**/(*.ts|*.css|*.scss)\"",
-    "db:seed": "ts-node ./src/scripts/seed.ts"
+    "db:seed": "ts-node ./src/scripts/seed.ts",
+    "db:generate": "npx prisma generate",
+    "db:push": "npx prisma db push",
+    "db:studio": "npx prisma studio"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.5",

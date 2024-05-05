@@ -37,7 +37,7 @@ interface IInIt {
   >
 }
 
-const DELAY_BETWEEN_MATCHES = 8000
+const DELAY_BETWEEN_MATCHES = 12000
 
 const init = ({ socket, io }: IInIt) => {
   socket.on(
@@ -59,7 +59,7 @@ const init = ({ socket, io }: IInIt) => {
 
       if (table?.players.length === 2) {
         // start game
-        await initNewMatch(table.id, DELAY_BETWEEN_MATCHES)
+        await initNewMatch(table.id, 8000)
       }
     }
   )
