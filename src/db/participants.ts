@@ -57,6 +57,7 @@ const raise = async (
   try {
     const stack = currentParticipant.player.stack
     const reRaiseAmount = amount - currentParticipant.bet
+
     if (reRaiseAmount > stack) return
 
     const participant = await db.participant.update({
@@ -147,6 +148,7 @@ export const handlePacticipantRaise = async (
 
     return updatedCurrentParticipant
   } catch (error) {
+    console.log(error)
     return null
   }
 }

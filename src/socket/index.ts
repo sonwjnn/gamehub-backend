@@ -264,6 +264,20 @@ const init = ({ socket, io }: IInIt) => {
         }
 
         broadcastToTable(newTable, ' New match started ')
+
+        for (let i = 0; i < newTable.players.length; i++) {
+          let socketId = newTable.players[i].socketId as string
+          io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
+            tableId: table.id,
+            players: newTable.players.map(item => {
+              return {
+                ...item,
+                isTurn: false,
+              }
+            }),
+          })
+        }
+
         for (let i = 0; i < newTable.players.length; i++) {
           let socketId = newTable.players[i].socketId as string
 

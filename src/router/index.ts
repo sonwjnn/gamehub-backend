@@ -14,6 +14,7 @@ import matches from './matches'
 import histories from './histories'
 
 import usersAdmin from './admin/users'
+import tablesAdmin from './admin/tables'
 
 const router = express.Router()
 
@@ -34,6 +35,7 @@ export default (): express.Router => {
 
   // api routes for admin
   router.use('/api/admin/users', usersAdmin())
+  router.use('/api/admin/tables', tablesAdmin())
 
   return router
 }

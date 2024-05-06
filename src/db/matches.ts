@@ -132,15 +132,6 @@ export const createMatch = async (tableId: string) => {
       },
     })
 
-    await db.table.update({
-      where: {
-        id: table.id,
-      },
-      data: {
-        handOver: false,
-      },
-    })
-
     const participantInputs = participants.map((playerId: string) => ({
       playerId,
       matchId: match.id,
@@ -205,7 +196,23 @@ export const createMatch = async (tableId: string) => {
       },
     })) as MatchWithParticipants
 
-    return { match: newMatch, playerId: updatedPlayer.id, table: table }
+    const updatedTable = await db.table.update({
+      where: {
+        id: table.id,
+      },
+      data: {
+        handOver: false,
+      },
+      include: {
+        players: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+
+    return { match: newMatch, playerId: updatedPlayer.id, table: updatedTable }
   } catch (error) {
     console.log(error)
     return { match: null, playerId: null }

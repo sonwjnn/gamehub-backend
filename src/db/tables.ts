@@ -758,6 +758,8 @@ export const changeTurn = async (
       1
     )
 
+    console.log(nextPlayerId)
+
     await updatePlayerTurn(table, nextPlayerId)
 
     return nextPlayerId
