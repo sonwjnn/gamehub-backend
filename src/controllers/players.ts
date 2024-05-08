@@ -136,6 +136,7 @@ const createPlayer = async (req: Request, res: Response) => {
         socketId,
         buyIn,
         stack: buyIn,
+        previousStack: buyIn,
       },
       include: {
         user: true,

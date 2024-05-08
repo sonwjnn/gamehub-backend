@@ -6,7 +6,7 @@ const getHistoriesByUserId = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params
 
-    const histories = await db.winMessages.findMany({
+    const winHistories = await db.winMessages.findMany({
       where: {
         userId,
       },
@@ -20,7 +20,73 @@ const getHistoriesByUserId = async (req: Request, res: Response) => {
       },
     })
 
-    responseHandler.ok(res, histories)
+    const loseHistory = await db.loseHistory.findMany({
+      where: {
+        userId,
+      },
+
+      include: {
+        match: {
+          include: {
+            table: true,
+          },
+        },
+      },
+    })
+
+    const formatedWinHistories = winHistories.map(history => ({
+      ...history,
+      type: 'win',
+    }))
+
+    const formatedLoseHistories = loseHistory.map(history => ({
+      ...history,
+      type: 'lose',
+    }))
+
+    responseHandler.ok(res, [...formatedWinHistories, ...formatedLoseHistories])
+  } catch (error) {
+    console.log(error)
+    responseHandler.error(res)
+  }
+}
+
+const getStatisticalByTableId = async (req: Request, res: Response) => {
+  try {
+    const { userId, tableId } = req.params
+
+    const winHistories = await db.winMessages.findMany({
+      where: {
+        userId,
+        match: {
+          tableId,
+        },
+      },
+    })
+
+    const loseHistory = await db.loseHistory.findMany({
+      where: {
+        userId,
+        match: {
+          tableId,
+        },
+      },
+    })
+
+    const winAmount = winHistories
+      .map(history => history.amount)
+      .reduce((acc, cur) => acc + cur, 0)
+
+    const loseAmount = loseHistory
+      .map(history => history.amount)
+      .reduce((acc, cur) => acc + cur, 0)
+
+    responseHandler.ok(res, {
+      winCount: winHistories.length,
+      loseCount: loseHistory.length,
+      winAmount,
+      loseAmount,
+    })
   } catch (error) {
     console.log(error)
     responseHandler.error(res)
@@ -29,4 +95,5 @@ const getHistoriesByUserId = async (req: Request, res: Response) => {
 
 export default {
   getHistoriesByUserId,
+  getStatisticalByTableId,
 }
