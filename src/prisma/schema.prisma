@@ -86,11 +86,11 @@ model WinMessages {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   content  String
-  handName String @map(name: "hand_name")
+  handName String? @map(name: "hand_name")
   amount   Int
 
-  bestHand   Card[] @relation("BestHandCards")
-  winnerHand Card[] @relation("WinnerHandCards")
+  bestHand   String? @map(name: "best_hand")
+  winnerHand String? @map(name: "winner_hand")
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 
@@ -109,8 +109,8 @@ model LoseHistory {
   handName String? @map(name: "hand_name")
   amount   Int
 
-  worstHand Card[] @relation("WorstHandCards")
-  loserHand Card[] @relation("LoserHandCards")
+  worstHand String? @map(name: "worst_hand")
+  loserHand String? @map(name: "loser_hand")
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 
@@ -148,12 +148,6 @@ model Card {
   decks   Deck[]
   matches Match[]
 
-  bestHands  WinMessages[] @relation("BestHandCards")
-  winnerHand WinMessages[] @relation("WinnerHandCards")
-
-  worstHands LoseHistory[] @relation("WorstHandCards")
-  loserHand  LoseHistory[] @relation("LoserHandCards")
-
   participantOne Participant[] @relation("CardOne")
   participantTwo Participant[] @relation("CardTwo")
 
@@ -184,7 +178,7 @@ model Player {
   bigBlindMatch   Match[] @relation("BigBlindPlayer")
   buttonMatch     Match[] @relation("ButtonPlayer")
 
-  winners Match[] @relation("MatchWinner")
+  matches Match[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 
@@ -329,9 +323,6 @@ model Match {
   isRiver    Boolean @default(false) @map(name: "is_river")
   isShowdown Boolean @default(false) @map(name: "is_showdown")
 
-  winnerId String?
-  winner   Player? @relation("MatchWinner", fields: [winnerId], references: [id])
-
   buttonId String? @map(name: "button_id")
   button   Player? @relation("ButtonPlayer", fields: [buttonId], references: [id])
 
@@ -341,6 +332,7 @@ model Match {
   bigBlindId String? @map(name: "big_blind_id")
   bigBlind   Player? @relation("BigBlindPlayer", fields: [bigBlindId], references: [id])
 
+  winners       Player[]
   participants  Participant[]
   sidePots      SidePot[]
   winMessages   WinMessages[]

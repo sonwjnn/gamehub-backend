@@ -353,11 +353,8 @@ const init = ({ socket, io }: IInIt) => {
                   cardTwo: true,
                 },
               },
+              winners: true,
               winMessages: {
-                include: {
-                  winnerHand: true,
-                  bestHand: true,
-                },
                 orderBy: {
                   createdAt: 'desc',
                 },

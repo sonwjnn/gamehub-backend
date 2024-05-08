@@ -1,6 +1,10 @@
 import { Card } from '@prisma/client'
 import { getMatchById } from './matches'
 import { ParticipantWithCards, ParticipantWithPlayerAndCards } from '../types'
+import { formatCardForSolver } from '../utils/formatting'
+import { rankHands } from '@xpressit/winning-poker-hand-rank'
+import { PlayingCard } from '@xpressit/winning-poker-hand-rank/dist/types'
+import lodash from 'lodash'
 
 interface Hand {
   name: string
@@ -591,5 +595,84 @@ const hasStraightFlush = (cards: CustomCard[]): Hand => {
       // sf.push('Straight Flush')
     }
     return sf
+  }
+}
+
+export const getWinner2 = async (
+  participants: ParticipantWithPlayerAndCards[]
+) => {
+  try {
+    const gameType = 'texas'
+
+    const currentMatch = await getMatchById(participants[0].matchId)
+
+    if (!currentMatch) {
+      return null
+    }
+
+    const formattedPaticipants = participants.map(participant => ({
+      ...participant,
+      cardOne: formatCardForSolver(participant.cardOne),
+      cardTwo: formatCardForSolver(participant.cardTwo),
+    }))
+
+    const findHandOwner = (cards: PlayingCard[]) => {
+      const participant = formattedPaticipants.find(participant => {
+        return [participant.cardOne, participant.cardTwo].every(card =>
+          cards.includes(card)
+        )
+      })
+      return participant
+    }
+
+    const formattedBoard = currentMatch.board.map(item =>
+      formatCardForSolver(item)
+    ) as [PlayingCard, PlayingCard, PlayingCard, PlayingCard, PlayingCard]
+
+    console.log(
+      formattedBoard,
+      formattedPaticipants.map(participant => [
+        participant.cardOne,
+        participant.cardTwo,
+      ])
+    )
+
+    const res = rankHands(
+      gameType,
+      formattedBoard,
+      formattedPaticipants.map(participant => [
+        participant.cardOne,
+        participant.cardTwo,
+      ])
+    )
+
+    console.log(res)
+
+    const highestRank = res.reduce(
+      (minRank, player) => Math.min(minRank, player.rank),
+      Infinity
+    )
+
+    const highestRankWinners = res
+      .filter(winner => winner.rank === highestRank)
+      .map(winner => {
+        const participant = findHandOwner([
+          ...winner.madeHand,
+          ...winner.unused,
+        ])
+        return {
+          id: participant?.id,
+          playerId: participant?.playerId,
+          handName: winner.combination,
+          bestHand: `[${winner.madeHand.join(', ')}]`,
+          winnerHand: `[${[participant?.cardOne, participant?.cardTwo].join(', ')}]`,
+        }
+      })
+
+    console.log(highestRankWinners)
+
+    return highestRankWinners
+  } catch {
+    return null
   }
 }

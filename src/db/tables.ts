@@ -6,7 +6,13 @@ import {
   TableWithPlayers,
 } from '../types'
 import { PokerActions } from '../pokergame/actions'
-import { formattedCards, getBestHand, getWinner, unformatCards } from './poker'
+import {
+  formattedCards,
+  getBestHand,
+  getWinner,
+  getWinner2,
+  unformatCards,
+} from './poker'
 import { createLoseHistories } from './lose-history'
 
 // Table Actions
@@ -129,34 +135,20 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayerAndCards) => {
         id: winner.matchId,
       },
       data: {
-        winnerId: winner.playerId,
+        winners: {
+          connect: {
+            id: winnerPlayer.id,
+          },
+        },
       },
     })
-
-    const winnerCardOne = formattedCards(winner.cardOne)
-    const winnerCardTwo = formattedCards(winner.cardTwo)
-
-    const bestHand = getBestHand([
-      ...currentMatch.board.map(card => formattedCards(card)),
-      winnerCardOne,
-      winnerCardTwo,
-    ])
-
-    const winnerHand = [winnerCardOne, winnerCardTwo]
 
     await db.winMessages.create({
       data: {
         userId: winnerPlayer.userId,
         matchId: winner.matchId,
-        content: `${winnerPlayer.user.username} wins $${currentMatch.pot} with ${bestHand.name}`,
+        content: `${winnerPlayer.user.username} win ${currentMatch.pot}$ without showdown!`,
         amount: currentMatch.pot,
-        handName: bestHand.name,
-        bestHand: {
-          connect: bestHand.cards.map(card => ({ id: card.id })),
-        },
-        winnerHand: {
-          connect: winnerHand.map(card => ({ id: card.id })),
-        },
       },
     })
 
@@ -312,13 +304,13 @@ const determineMainPotWinner = async (matchId: string) => {
       matchId
     )) as ParticipantWithPlayerAndCards[]
 
-    const winnerParticipant = await determineWinner(
+    const winnerParticipants = await determineWinner(
       unfoldedParticipants,
       currentMatch.mainPot || currentMatch.pot,
       'mainPot'
     )
 
-    if (!winnerParticipant) {
+    if (!winnerParticipants?.length) {
       return null
     }
 
@@ -328,7 +320,11 @@ const determineMainPotWinner = async (matchId: string) => {
       },
       data: {
         isShowdown: true,
-        winnerId: winnerParticipant.playerId,
+        winners: {
+          connect: winnerParticipants.map(participant => ({
+            id: participant.playerId,
+          })),
+        },
       },
       include: {
         table: true,
@@ -371,17 +367,11 @@ const determineSidePotWinners = async (matchId: string) => {
     if (currentMatch.sidePots.length < 0) return null
 
     currentMatch.sidePots.map(async sidePot => {
-      const winnerParticipant = await determineWinner(
+      await determineWinner(
         sidePot.participants as ParticipantWithPlayerAndCards[],
         sidePot.amount,
         'sidePot'
       )
-
-      if (!winnerParticipant) {
-        return null
-      }
-
-      return winnerParticipant
     })
   } catch {
     return null
@@ -394,61 +384,60 @@ const determineWinner = async (
   type: 'mainPot' | 'sidePot'
 ) => {
   try {
-    if (!Array.isArray(participants) || participants.length === 0) {
+    if (participants.length === 0) {
       return null
     }
 
-    const res = await getWinner(participants)
+    const winners = await getWinner2(participants)
 
-    if (!res) return null
+    if (!winners) return null
 
-    const winnerFirst = res[0]
+    for (const winner of winners) {
+      const winAmount = amount / winners.length
 
-    // TODO: Hoa Bai
-    const winnerParticipant = await db.participant.update({
-      where: {
-        id: winnerFirst.id as string,
-      },
-      data: {
-        bet: 0,
-        lastAction: 'WINNER',
-      },
-    })
-
-    const player = await db.player.update({
-      where: {
-        id: winnerParticipant.playerId,
-      },
-      data: {
-        isTurn: false,
-        stack: {
-          increment: amount,
+      const winnerParticipant = await db.participant.update({
+        where: {
+          id: winner.id,
         },
-      },
-      include: {
-        user: true,
-      },
-    })
-
-    if (type === 'mainPot') {
-      await db.winMessages.create({
         data: {
-          userId: player.userId,
-          matchId: winnerParticipant.matchId,
-          content: `${player.user.username} wins $${amount} with ${winnerFirst.handName}`,
-          amount,
-          handName: winnerFirst.handName,
-          bestHand: {
-            connect: winnerFirst.bestHand.map(card => ({ id: card.id })),
-          },
-          winnerHand: {
-            connect: winnerFirst.winnerHand.map(card => ({ id: card.id })),
-          },
+          bet: 0,
+          lastAction: 'WINNER',
         },
       })
+
+      const player = await db.player.update({
+        where: {
+          id: winnerParticipant.playerId,
+        },
+        data: {
+          isTurn: false,
+          stack: {
+            increment: winAmount,
+          },
+        },
+        include: {
+          user: true,
+        },
+      })
+
+      if (type === 'mainPot') {
+        await db.winMessages.create({
+          data: {
+            userId: player.userId,
+            matchId: winnerParticipant.matchId,
+            content: `${player.user.username} wins $${amount} with ${winner.handName}`,
+            amount,
+            handName: winner.handName,
+            bestHand: winner.bestHand,
+            winnerHand: winner.winnerHand,
+          },
+        })
+      }
     }
 
-    return winnerParticipant
+    // TODO: Hoa Bai
+
+    return winners
   } catch (error) {
     console.log(error)
     return null
