@@ -1,9 +1,5 @@
 import express from 'express'
 import http from 'http'
-import bodyParser from 'body-parser'
-import cookieParser from 'cookie-parser'
-import compression from 'compression'
-import cors from 'cors'
 import { corsOptions } from './configs/cors'
 import { Server } from 'socket.io'
 import gameSocket from './socket'
@@ -15,19 +11,12 @@ import {
 } from './types'
 
 import router from './router'
+import configureMiddleware from './middlewares/config'
 
 const app = express()
 
-app.use(
-  cors({
-    credentials: true,
-    // ...corsOptions,
-  })
-)
+configureMiddleware(app)
 
-app.use(compression())
-app.use(cookieParser())
-app.use(bodyParser.json())
 app.use('/', router())
 
 const server = http.createServer(app)

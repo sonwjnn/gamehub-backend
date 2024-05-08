@@ -1,4 +1,5 @@
 import { db } from '../lib/db'
+import { PlayerWithUser } from '../types'
 import { getTableById } from './tables'
 
 export const getPlayers = async () => {
@@ -110,5 +111,22 @@ export const removePlayerBySocketId = async (socketId: string) => {
     console.log(error)
 
     return null
+  }
+}
+
+export const updatePreviousStackPlayers = async (players: PlayerWithUser[]) => {
+  try {
+    for (const player of players) {
+      await db.player.update({
+        where: {
+          id: player.id,
+        },
+        data: {
+          previousStack: player.stack,
+        },
+      })
+    }
+  } catch (error) {
+    console.log(error)
   }
 }

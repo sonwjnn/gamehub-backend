@@ -13,6 +13,13 @@ export type ServerIo = {
   }
 }
 
+type Statistical = {
+  winCount: number
+  winAmount: number
+  loseCount: number
+  loseAmount: number
+}
+
 export interface ServerToClientEvents {
   noArg: () => void
   basicEmit: (a: number, b: string, c: Buffer) => void
@@ -49,6 +56,8 @@ export interface ServerToClientEvents {
     message: string
     from: any
   }) => void
+
+  [PokerActions.UPDATE_STATISTICAL]: (data: Statistical) => void
   [PokerActions.MATCH_STARTED]: ({
     tableId,
     match,

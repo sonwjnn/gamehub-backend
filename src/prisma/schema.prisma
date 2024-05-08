@@ -106,7 +106,7 @@ model LoseHistory {
   userId String @map(name: "user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  handName String @map(name: "hand_name")
+  handName String? @map(name: "hand_name")
   amount   Int
 
   worstHand Card[] @relation("WorstHandCards")
@@ -166,9 +166,10 @@ model Player {
   userId String @map(name: "user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  socketId String? @map(name: "socket_id")
-  buyIn    Int     @default(0) @map(name: "buy_in")
-  stack    Int     @default(0)
+  socketId      String? @map(name: "socket_id")
+  buyIn         Int     @default(0) @map(name: "buy_in")
+  stack         Int     @default(0)
+  previousStack Int     @default(0) @map(name: "previos_stack")
 
   tableId String @map(name: "table_id")
   table   Table  @relation(fields: [tableId], references: [id], onDelete: Cascade)

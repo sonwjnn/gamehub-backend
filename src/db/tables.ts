@@ -7,6 +7,7 @@ import {
 } from '../types'
 import { PokerActions } from '../pokergame/actions'
 import { formattedCards, getBestHand, getWinner, unformatCards } from './poker'
+import { createLoseHistories } from './lose-history'
 
 // Table Actions
 export const getTables = async () => {
@@ -159,6 +160,7 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayerAndCards) => {
       },
     })
 
+    await createLoseHistories(currentMatch.tableId, currentMatch.id)
     await endHand(currentMatch.tableId)
   } catch (error) {
     console.log(error)
@@ -312,7 +314,7 @@ const determineMainPotWinner = async (matchId: string) => {
 
     const winnerParticipant = await determineWinner(
       unfoldedParticipants,
-      currentMatch.mainPot,
+      currentMatch.mainPot || currentMatch.pot,
       'mainPot'
     )
 
@@ -333,7 +335,8 @@ const determineMainPotWinner = async (matchId: string) => {
       },
     })
 
-    await endHand(updatedMatch.tableId)
+    await createLoseHistories(currentMatch.tableId, currentMatch.id)
+    await endHand(currentMatch.tableId)
 
     return updatedMatch
   } catch (error) {
@@ -758,8 +761,6 @@ export const changeTurn = async (
       1
     )
 
-    console.log(nextPlayerId)
-
     await updatePlayerTurn(table, nextPlayerId)
 
     return nextPlayerId
@@ -879,7 +880,6 @@ const calculateSidePots = async (matchId: string) => {
             },
           })
 
-          console.log(possibleParticipantIds)
           await db.sidePot.update({
             where: { id: sidePot.id },
             data: {

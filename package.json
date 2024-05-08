@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@prisma/client": "5.11.0",
+    "@types/hpp": "^0.2.6",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.11.30",
     "body-parser": "^1.20.2",
@@ -39,14 +40,17 @@
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^7.2.0",
     "express-validator": "^7.0.1",
+    "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "pokersolver": "^2.1.4",
     "prisma": "^5.11.0",
     "socket.io": "^4.7.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.3"
+    "typescript": "^5.4.3",
+    "xss-clean": "^0.1.4"
   },
   "description": "To install dependencies:",
   "version": "1.0.0",

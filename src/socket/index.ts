@@ -249,7 +249,7 @@ const init = ({ socket, io }: IInIt) => {
 
     let elapsed = 0
     const interval = setInterval(async () => {
-      elapsed += 1000 // assuming this function is called every 1 second
+      elapsed += 1000
       if (elapsed >= (delay || 10000)) {
         clearInterval(interval)
 
@@ -289,7 +289,7 @@ const init = ({ socket, io }: IInIt) => {
           })
         }
       }
-    }, 1000) // check every 1 second
+    }, 1000)
   }
 
   const broadcastToTable = (
@@ -316,88 +316,124 @@ const init = ({ socket, io }: IInIt) => {
   }
 
   const changeTurnAndBroadcast = (
-    table: TableWithPlayers,
-    participant: Participant
-  ) => {
-    let elapsed = 0
-    const interval = setInterval(async () => {
-      elapsed += 1000 // assuming this function is called every 1 second
-      if (elapsed >= 1000) {
-        clearInterval(interval)
+      table: TableWithPlayers,
+      participant: Participant
+    ) => {
+      let elapsed = 0
+      const interval = setInterval(async () => {
+        elapsed += 1000 // assuming this function is called every 1 second
+        if (elapsed >= 1000) {
+          clearInterval(interval)
 
-        const playerId = await changeTurn(table, participant)
+          const playerId = await changeTurn(table, participant)
 
-        const currentMatch = await db.match.findUnique({
-          where: {
-            id: participant.matchId,
-          },
-          include: {
-            table: {
-              include: {
-                players: {
-                  include: {
-                    user: true,
+          const currentMatch = await db.match.findUnique({
+            where: {
+              id: participant.matchId,
+            },
+            include: {
+              table: {
+                include: {
+                  players: {
+                    include: {
+                      user: true,
+                    },
                   },
                 },
               },
-            },
-            board: true,
-            participants: {
-              include: {
-                player: {
-                  include: {
-                    user: true,
+              board: true,
+              participants: {
+                include: {
+                  player: {
+                    include: {
+                      user: true,
+                    },
                   },
+                  cardOne: true,
+                  cardTwo: true,
                 },
-                cardOne: true,
-                cardTwo: true,
+              },
+              winMessages: {
+                include: {
+                  winnerHand: true,
+                  bestHand: true,
+                },
+                orderBy: {
+                  createdAt: 'desc',
+                },
               },
             },
-            winMessages: {
-              include: {
-                winnerHand: true,
-                bestHand: true,
-              },
-              orderBy: {
-                createdAt: 'desc',
+          })
+
+          const newPlayers = currentMatch?.table?.players || []
+
+          for (let i = 0; i < newPlayers.length; i++) {
+            let socketId = newPlayers[i].socketId as string
+            io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
+              tableId: table.id,
+              players: newPlayers.map(item => {
+                return { ...item, isTurn: false }
+              }),
+            })
+          }
+
+          for (let i = 0; i < newPlayers.length; i++) {
+            let socketId = newPlayers[i].socketId as string
+            io.to(socketId).emit(PokerActions.CHANGE_TURN, {
+              match: currentMatch,
+              playerId,
+            })
+          }
+
+          // end match
+          if (currentMatch?.table.handOver) {
+            await updateStatistical(newPlayers)
+            await initNewMatch(currentMatch?.table.id, DELAY_BETWEEN_MATCHES)
+          }
+        }
+      }, 1000)
+    },
+    updateStatistical = async (players: PlayerWithUser[]) => {
+      for (let i = 0; i < players.length; i++) {
+        const [winHistories, loseHistory] = await Promise.all([
+          db.winMessages.findMany({
+            where: {
+              userId: players[i].userId,
+              match: {
+                tableId: players[i].tableId,
               },
             },
-          },
+          }),
+          db.loseHistory.findMany({
+            where: {
+              userId: players[i].userId,
+              match: {
+                tableId: players[i].tableId,
+              },
+            },
+          }),
+        ])
+
+        const winCount = winHistories.length
+        const loseCount = loseHistory.length
+
+        const winAmount = winHistories
+          .map(history => history.amount)
+          .reduce((acc, cur) => acc + cur, 0)
+
+        const loseAmount = loseHistory
+          .map(history => history.amount)
+          .reduce((acc, cur) => acc + cur, 0)
+
+        let socketId = players[i].socketId as string
+        io.to(socketId).emit(PokerActions.UPDATE_STATISTICAL, {
+          winCount: winCount,
+          loseCount: loseCount,
+          winAmount: winAmount,
+          loseAmount: loseAmount,
         })
-
-        const newPlayers = currentMatch?.table?.players || []
-
-        for (let i = 0; i < newPlayers.length; i++) {
-          let socketId = newPlayers[i].socketId as string
-          io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
-            tableId: table.id,
-            players: newPlayers.map(item => {
-              if (item.id === playerId) {
-                return {
-                  ...item,
-                  isTurn: true,
-                }
-              }
-              return { ...item, isTurn: false }
-            }),
-          })
-        }
-
-        for (let i = 0; i < newPlayers.length; i++) {
-          let socketId = newPlayers[i].socketId as string
-          io.to(socketId).emit(PokerActions.CHANGE_TURN, {
-            match: currentMatch,
-            playerId,
-          })
-        }
-
-        // end match
-        if (currentMatch?.table.handOver) {
-          await initNewMatch(currentMatch?.table.id, DELAY_BETWEEN_MATCHES)
-        }
       }
-    }, 1000)
-  }
+    }
 }
 
 export default { init }

@@ -2,6 +2,7 @@ import { shuffle } from 'lodash'
 import { db } from '../lib/db'
 import { MatchWithParticipants } from '../types'
 import { findNextActivePlayer, getTableById, placeBlinds } from './tables'
+import { updatePreviousStackPlayers } from './players'
 
 export const getMatches = async () => {
   try {
@@ -41,6 +42,8 @@ export const createMatch = async (tableId: string) => {
     if (!table) {
       return { match: null, playerId: null }
     }
+
+    await updatePreviousStackPlayers(table.players)
 
     const participants = table.players.map(player => player.id)
 
