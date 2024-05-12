@@ -20,6 +20,17 @@ type Statistical = {
   loseAmount: number
 }
 
+type CustomCard = {
+  id: string
+  rank: string
+  suit: string
+}
+
+export type HighlightCard = {
+  cards: CustomCard[]
+  name: string
+}
+
 export interface ServerToClientEvents {
   noArg: () => void
   basicEmit: (a: number, b: string, c: Buffer) => void
@@ -58,6 +69,7 @@ export interface ServerToClientEvents {
   }) => void
 
   [PokerActions.UPDATE_STATISTICAL]: (data: Statistical) => void
+  [PokerActions.HIGHLIGHT_CARDS]: (data: HighlightCard) => void
   [PokerActions.MATCH_STARTED]: ({
     tableId,
     match,

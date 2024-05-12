@@ -1,6 +1,10 @@
 import { Card } from '@prisma/client'
 import { getMatchById } from './matches'
-import { ParticipantWithCards, ParticipantWithPlayerAndCards } from '../types'
+import {
+  HighlightCard,
+  ParticipantWithCards,
+  ParticipantWithPlayerAndCards,
+} from '../types'
 import { formatCardForSolver } from '../utils/formatting'
 import { rankHands } from '@xpressit/winning-poker-hand-rank'
 import { PlayingCard } from '@xpressit/winning-poker-hand-rank/dist/types'
@@ -675,4 +679,97 @@ export const getWinner2 = async (
   } catch {
     return null
   }
+}
+
+export const getHighlightCardsForPlayer = (
+  boardCards: CustomCard[],
+  playerCards: CustomCard[]
+): HighlightCard => {
+  const bestHand = getBestHand([...boardCards, ...playerCards])
+
+  bestHand.cards = bestHand.cards.filter(item => item !== undefined)
+
+  if (bestHand.name === 'High Card') {
+    return { cards: [], name: '' }
+  }
+
+  if (bestHand.name === '1 Pair') {
+    let cardCounts: { [key: string]: number } = {}
+
+    for (let card of bestHand.cards) {
+      if (cardCounts[card.rank]) {
+        cardCounts[card.rank]++
+      } else {
+        cardCounts[card.rank] = 1
+      }
+    }
+
+    for (let cardValue in cardCounts) {
+      if (cardCounts[cardValue] === 2) {
+        const cards = bestHand.cards.filter(card => card.rank === cardValue)
+        const dataReturn = {
+          cards: cards.map(card => unformatCards(card)),
+          name: bestHand.name,
+        }
+        return dataReturn
+      }
+    }
+  }
+
+  if (bestHand.name === '2 Pair') {
+    let cardCounts: { [key: string]: number } = {}
+    let pairs: CustomCard[] = []
+
+    for (let card of bestHand.cards) {
+      if (cardCounts[card.rank]) {
+        cardCounts[card.rank]++
+      } else {
+        cardCounts[card.rank] = 1
+      }
+    }
+
+    for (let cardValue in cardCounts) {
+      if (cardCounts[cardValue] === 2) {
+        const cards = bestHand.cards.filter(card => card.rank === cardValue)
+        pairs.push(...cards.map(card => unformatCards(card)))
+      }
+    }
+
+    const dataReturn = {
+      cards: pairs,
+      name: bestHand.name,
+    }
+    return dataReturn
+  }
+
+  if (bestHand.name === 'Three of a kind') {
+    let cardCounts: { [key: string]: number } = {}
+
+    for (let card of bestHand.cards) {
+      if (cardCounts[card.rank]) {
+        cardCounts[card.rank]++
+      } else {
+        cardCounts[card.rank] = 1
+      }
+    }
+
+    for (let cardValue in cardCounts) {
+      if (cardCounts[cardValue] === 3) {
+        const cards = bestHand.cards.filter(card => card.rank === cardValue)
+        const dataReturn = {
+          cards: cards.map(card => unformatCards(card)),
+          name: bestHand.name,
+        }
+        return dataReturn
+      }
+    }
+  }
+
+  return {
+    cards: bestHand.cards.map(card => unformatCards(card)),
+    name: bestHand.name,
+  }
+
+  // Logic to check the combination of cards for a specific player
+  // Return an array of cards that need to be highlighted for this player
 }

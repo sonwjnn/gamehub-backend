@@ -16,11 +16,12 @@ import {
 } from '../types'
 import { Server } from 'socket.io'
 
-import { Participant } from '@prisma/client'
+import { Card, Participant } from '@prisma/client'
 import { PokerActions } from '../pokergame/actions'
 import { changeTurn, getTableById } from '../db/tables'
 import { createMatch } from '../db/matches'
 import { removePlayerBySocketId } from '../db/players'
+import { formattedCards, getHighlightCardsForPlayer } from '../db/poker'
 
 interface IInIt {
   socket: Socket<
@@ -380,6 +381,50 @@ const init = ({ socket, io }: IInIt) => {
               match: currentMatch,
               playerId,
             })
+          }
+
+          let boardCards = [] as Card[]
+          if (currentMatch?.board) {
+            if (
+              currentMatch.isFlop &&
+              !currentMatch.isTurn &&
+              !currentMatch.isRiver
+            ) {
+              boardCards = currentMatch.board.slice(0, 3)
+            }
+            if (currentMatch.isTurn && !currentMatch.isRiver) {
+              boardCards = currentMatch.board.slice(0, 4)
+            }
+            if (currentMatch.isRiver) {
+              boardCards = currentMatch.board
+            }
+          }
+
+          const formattedBoard = boardCards.map(card => {
+            return formattedCards(card)
+          })
+
+          for (let i = 0; i < newPlayers.length; i++) {
+            let socketId = newPlayers[i].socketId as string
+
+            const participant = currentMatch?.participants.find(
+              participant => participant.playerId === newPlayers[i].id
+            )
+
+            if (!participant || !participant.cardOne || !participant.cardTwo)
+              return
+
+            const formattedParticipantCards = [
+              formattedCards(participant.cardOne),
+              formattedCards(participant.cardTwo),
+            ]
+
+            const cards = getHighlightCardsForPlayer(
+              formattedBoard,
+              formattedParticipantCards
+            )
+
+            io.to(socketId).emit(PokerActions.HIGHLIGHT_CARDS, cards)
           }
 
           // end match
