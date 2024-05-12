@@ -18,7 +18,7 @@ export const createLoseHistories = async (tableId: string, matchId: string) => {
     for (const player of players) {
       const amount = player.previousStack - player.stack
 
-      if (amount <= 0) return null
+      if (amount <= 0) continue
 
       await db.loseHistory.create({
         data: {
