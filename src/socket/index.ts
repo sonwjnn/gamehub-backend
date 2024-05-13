@@ -400,9 +400,7 @@ const init = ({ socket, io }: IInIt) => {
             }
           }
 
-          const formattedBoard = boardCards.map(card => {
-            return formattedCards(card)
-          })
+          const formattedBoard = boardCards.map(card => formattedCards(card))
 
           for (let i = 0; i < newPlayers.length; i++) {
             let socketId = newPlayers[i].socketId as string
@@ -412,7 +410,7 @@ const init = ({ socket, io }: IInIt) => {
             )
 
             if (!participant || !participant.cardOne || !participant.cardTwo)
-              return
+              continue
 
             const formattedParticipantCards = [
               formattedCards(participant.cardOne),
@@ -430,6 +428,7 @@ const init = ({ socket, io }: IInIt) => {
           // end match
           if (currentMatch?.table.handOver) {
             await updateStatistical(newPlayers)
+
             await initNewMatch(currentMatch?.table.id, DELAY_BETWEEN_MATCHES)
           }
         }

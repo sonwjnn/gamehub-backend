@@ -190,8 +190,12 @@ export const getBestHand = (cards: CustomCard[]): Hand => {
   if (x.cards.length != 0) {
     return x
   }
-  // x = hasStraight(cards)
-  // if (x) { return x }
+
+  x = hasStraight(cards)
+  if (x.cards.length != 0) {
+    return x
+  }
+
   x = hasThreeOfAKind(cards)
   if (x.cards.length != 0) {
     return x

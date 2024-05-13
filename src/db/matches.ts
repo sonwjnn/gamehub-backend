@@ -94,6 +94,27 @@ export const createMatch = async (tableId: string) => {
       buttonId = findNextActivePlayer(table.players, lastButtonId, 1)
     }
 
+    // minus ante from player stack
+    let anteSum = 0
+    for (const player of table.players) {
+      const updatedStack = player.stack - table.ante
+
+      if (updatedStack >= 0) {
+        await db.player.update({
+          where: {
+            id: player.id,
+          },
+          data: {
+            stack: {
+              decrement: table.ante,
+            },
+          },
+        })
+
+        anteSum += table.ante
+      }
+    }
+
     // set blinds
     const isHeadUp = table.players.length === 2
     const smallBlindId = isHeadUp
@@ -104,7 +125,7 @@ export const createMatch = async (tableId: string) => {
       : findNextActivePlayer(table.players, buttonId, 2)
 
     const minBet = table.minBuyIn / 200
-    const pot = minBet * 3
+    const pot = minBet * 3 + anteSum
     const callAmount = minBet * 2
     const minRaise = minBet * 4
 

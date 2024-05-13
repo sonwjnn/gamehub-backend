@@ -51,23 +51,20 @@ model Table {
   userId String @map(name: "user_id")
   user   User   @relation(fields: [userId], references: [id])
 
-  players  Player[]
-  messages Message[]
-  matches  Match[]
-
   maxPlayers Int @default(10) @map(name: "max_players")
   minPlayers Int @default(2) @map(name: "min_players")
 
   minBuyIn Int @map(name: "min_buy_in")
   maxBuyIn Int @map(name: "max_buy_in")
-
-  possibleVictoryConditions String? @map(name: "possible_victory_conditions")
+  ante     Int @default(0)
 
   handOver Boolean @default(true) @map(name: "hand_over")
+  deleted  Boolean @default(false) @map(name: "on_deleted")
 
-  decks Deck[]
-
-  deleted Boolean @default(false) @map(name: "on_deleted")
+  players  Player[]
+  messages Message[]
+  matches  Match[]
+  decks    Deck[]
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
