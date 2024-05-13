@@ -48,7 +48,7 @@ const deleteTableById = async (req: Request, res: Response) => {
 const updateTable = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
-    const { minBuyIn, maxBuyIn, name } = req.body
+    const { minBuyIn, maxBuyIn, name, ante } = req.body
 
     const table = await db.table.update({
       where: {
@@ -58,6 +58,7 @@ const updateTable = async (req: Request, res: Response) => {
         minBuyIn,
         maxBuyIn,
         name,
+        ante,
       },
     })
 
