@@ -694,7 +694,8 @@ export const getHighlightCardsForPlayer = (
   bestHand.cards = bestHand.cards.filter(item => item !== undefined)
 
   if (bestHand.name === 'High Card') {
-    return { cards: [], name: '' }
+    const trueName = playerCards[0].rank === 'T' ? '10' : bestHand.cards[0].rank
+    return { cards: [], name: `${trueName} High` }
   }
 
   if (bestHand.name === '1 Pair') {
@@ -711,9 +712,11 @@ export const getHighlightCardsForPlayer = (
     for (let cardValue in cardCounts) {
       if (cardCounts[cardValue] === 2) {
         const cards = bestHand.cards.filter(card => card.rank === cardValue)
+
+        const truePairName = cards[0].rank === 'T' ? '10' : cards[0].rank
         const dataReturn = {
           cards: cards.map(card => unformatCards(card)),
-          name: bestHand.name,
+          name: `1 Pair ${truePairName}`,
         }
         return dataReturn
       }
@@ -760,9 +763,34 @@ export const getHighlightCardsForPlayer = (
     for (let cardValue in cardCounts) {
       if (cardCounts[cardValue] === 3) {
         const cards = bestHand.cards.filter(card => card.rank === cardValue)
+        const truePairName = cards[0].rank === 'T' ? '10' : cards[0].rank
         const dataReturn = {
           cards: cards.map(card => unformatCards(card)),
-          name: bestHand.name,
+          name: `Three of a kind ${truePairName}`,
+        }
+        return dataReturn
+      }
+    }
+  }
+
+  if (bestHand.name === 'Four of a kind') {
+    let cardCounts: { [key: string]: number } = {}
+
+    for (let card of bestHand.cards) {
+      if (cardCounts[card.rank]) {
+        cardCounts[card.rank]++
+      } else {
+        cardCounts[card.rank] = 1
+      }
+    }
+
+    for (let cardValue in cardCounts) {
+      if (cardCounts[cardValue] === 4) {
+        const cards = bestHand.cards.filter(card => card.rank === cardValue)
+        const truePairName = cards[0].rank === 'T' ? '10' : cards[0].rank
+        const dataReturn = {
+          cards: cards.map(card => unformatCards(card)),
+          name: `Four of a kind ${truePairName}`,
         }
         return dataReturn
       }
