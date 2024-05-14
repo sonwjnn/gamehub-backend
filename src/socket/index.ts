@@ -38,7 +38,7 @@ interface IInIt {
   >
 }
 
-const DELAY_BETWEEN_MATCHES = 12000
+const DELAY_BETWEEN_MATCHES = 15000
 
 const init = ({ socket, io }: IInIt) => {
   socket.on(
@@ -429,7 +429,10 @@ const init = ({ socket, io }: IInIt) => {
           if (currentMatch?.table.handOver) {
             await updateStatistical(newPlayers)
 
-            await initNewMatch(currentMatch?.table.id, DELAY_BETWEEN_MATCHES)
+            const delay =
+              (!currentMatch.isShowdown && 8000) || DELAY_BETWEEN_MATCHES
+
+            await initNewMatch(currentMatch?.table.id, delay)
           }
         }
       }, 1000)
