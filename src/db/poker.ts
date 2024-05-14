@@ -183,10 +183,13 @@ export const getWinner = async (
 const sortHand = (cards: CustomCard[]) => {
   // sorts hand low to high by rank of cards. breaks ties arbitrarily
   cards.sort(function (a, b) {
-    if (+a.rank == 1 || +b.rank == 1) {
-      return +b.rank - +a.rank
+    const aRank = +a.rank === 1 ? 14 : +a.rank
+    const bRank = +b.rank === 1 ? 14 : +b.rank
+
+    if (aRank == 1 || bRank == 1) {
+      return bRank - aRank
     }
-    return +a.rank - +b.rank
+    return aRank - bRank
   })
   return cards as CustomCard[]
 }
@@ -471,38 +474,78 @@ const hasThreeOfAKind = (cards: CustomCard[]): Hand => {
 }
 
 const hasStraight = (cards: CustomCard[]): Hand => {
-  // UNFINISHED NEEDS FIXING
-  // returns the cards of the best possible straight if it exists, 0 otherwise
-  // ex: cards = [ace, two, three, four, five, ten, king], hasStraight(cards) = [ace, two, three, four, five]
-  // ex: cards = [ace, two, ten, jack, queen, king], hasStraight(cards) = [ten, jack]
-  let sortedCards = sortHand(cards)
-  let set = [sortedCards[0]] as CustomCard[]
+  let sortedCards = sortHand(cards).map(item => {
+    if (item.rank === '1') return { ...item, rank: '14' }
+    return item
+  })
+  let straights: CustomCard[][] = []
+  let temp: CustomCard[] = [sortedCards[0]]
+
   for (let i = 1; i < sortedCards.length; i++) {
-    if (+set[set.length - 1].rank == +sortedCards[i].rank - 1) {
-      set.push(sortedCards[i])
+    let currentRank = parseInt(sortedCards[i].rank)
+    let tempRank = parseInt(temp[temp.length - 1].rank)
+
+    if (currentRank === tempRank + 1) {
+      temp.push(sortedCards[i])
+      console.log(temp)
+      if (temp.length === 5) {
+        straights.push([...temp])
+        temp.shift()
+      }
+    } else {
+      if (temp.length >= 5) {
+        straights.push([...temp])
+      }
+      temp = [sortedCards[i]]
     }
   }
-  for (let i = set.length - 1; i >= 4; i--) {
-    if (
-      +set[set.length - 1].rank == 1 &&
-      (+set[i - 1].rank == 5 || +set[i - 1].rank == 13) &&
-      +set[i - 1].rank - 1 == +set[i - 2].rank &&
-      +set[i - 2].rank - 1 == +set[i - 3].rank &&
-      +set[i - 3].rank - 1 == +set[i - 4].rank
-    ) {
-      // set.unshift("Straight")
-      return { cards: set.slice(i - 4), name: '' }
-    } else if (
-      +set[i].rank - 1 == +set[i - 1].rank &&
-      +set[i - 1].rank - 1 == +set[i - 2].rank &&
-      +set[i - 2].rank - 1 == +set[i - 3].rank &&
-      +set[i - 3].rank - 1 == +set[i - 4].rank
-    ) {
-      // set.unshift("Straight")
-      return { cards: set.slice(i - 4), name: '' }
-    }
+
+  if (temp.length >= 5) {
+    straights.push([...temp])
   }
-  return { cards: [], name: '' }
+
+  // Check for Ace-low straight
+  if (
+    sortedCards.some(card => card.rank === '14') &&
+    sortedCards.some(card => card.rank === '2') &&
+    sortedCards.some(card => card.rank === '3') &&
+    sortedCards.some(card => card.rank === '4') &&
+    sortedCards.some(card => card.rank === '5')
+  ) {
+    let aceLowStraight = sortedCards.filter(card =>
+      ['14', '2', '3', '4', '5'].includes(card.rank)
+    )
+
+    const formattedStraight = aceLowStraight.map(item => {
+      if (item.rank === '14') return { ...item, rank: '1' }
+      return item
+    })
+    straights.push(formattedStraight)
+  }
+
+  if (straights.length > 0) {
+    // If there are multiple straights, return the highest one
+    let highestStraight = straights.reduce((highest, current) => {
+      let highestRank = parseInt(highest[4].rank)
+      let currentRank = parseInt(current[4].rank)
+
+      if (highestRank < currentRank) {
+        return current
+      } else {
+        return highest
+      }
+    })
+
+    const formatHighestStraight = highestStraight.map(item => {
+      if (item.rank === '14') return { ...item, rank: '1' }
+      return item
+    })
+
+    // console.log({ cards: formatHighestStraight, name: 'Straight' })
+    return { cards: formatHighestStraight, name: 'Straight' }
+  } else {
+    return { cards: [], name: '' }
+  }
 }
 
 const hasFlush = (cards: CustomCard[]): Hand => {
@@ -709,6 +752,8 @@ export const getHighlightCardsForPlayer = (
   playerCards: CustomCard[]
 ): HighlightCard => {
   const bestHand = getBestHand([...boardCards, ...playerCards])
+
+  console.log(bestHand)
 
   bestHand.cards = bestHand.cards.filter(item => item !== undefined)
 

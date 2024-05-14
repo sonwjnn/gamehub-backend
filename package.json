@@ -13,6 +13,7 @@
     "prettier:fix": "prettier --write \"src/**/(*.ts|*.css|*.scss)\"",
     "db:seed": "ts-node ./src/scripts/seed.ts",
     "db:solver": "ts-node ./src/scripts/solver.ts",
+    "db:test": "ts-node ./src/scripts/test.ts",
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:studio": "npx prisma studio"
@@ -37,6 +38,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.11.30",
     "@xpressit/winning-poker-hand-rank": "^0.2.1",
+    "async-mutex": "^0.5.0",
     "body-parser": "^1.20.2",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",

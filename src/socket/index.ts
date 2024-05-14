@@ -259,7 +259,7 @@ const init = ({ socket, io }: IInIt) => {
 
         const { match, playerId, table: newTable } = await createMatch(tableId)
 
-        if (!match || !playerId || !table) {
+        if (!match || !playerId || !newTable) {
           // broadcastToTable(table, ' Match and playerId is null ');
           return
         }
@@ -269,7 +269,7 @@ const init = ({ socket, io }: IInIt) => {
         for (let i = 0; i < newTable.players.length; i++) {
           let socketId = newTable.players[i].socketId as string
           io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
-            tableId: table.id,
+            tableId,
             players: newTable.players.map(item => {
               return {
                 ...item,
@@ -284,7 +284,7 @@ const init = ({ socket, io }: IInIt) => {
 
           // let tableCopy = hideOpponentCards(table, socketId);
           io.to(socketId).emit(PokerActions.MATCH_STARTED, {
-            tableId: table.id,
+            tableId,
             match,
             playerId,
           })
