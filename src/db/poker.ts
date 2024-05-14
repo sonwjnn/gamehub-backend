@@ -8,7 +8,6 @@ import {
 import { formatCardForSolver } from '../utils/formatting'
 import { rankHands } from '@xpressit/winning-poker-hand-rank'
 import { PlayingCard } from '@xpressit/winning-poker-hand-rank/dist/types'
-import lodash from 'lodash'
 
 interface Hand {
   name: string
@@ -73,6 +72,26 @@ export const unformatCards = (card: CustomCard) => {
   }
 
   return { ...card, rank: rankMap[card.rank], suit: suitMap[card.suit] }
+}
+
+export const formatRankToGetHighlightName = (rank: string) => {
+  const rankMap: { [key: string]: string } = {
+    '2': '2',
+    '3': '3',
+    '4': '4',
+    '5': '5',
+    '6': '6',
+    '7': '7',
+    '8': '8',
+    '9': '9',
+    '10': '10',
+    '11': 'J',
+    '12': 'Q',
+    '13': 'K',
+    '1': 'A',
+  }
+
+  return rankMap[rank]
 }
 
 interface getWinnerResponse {
@@ -694,7 +713,7 @@ export const getHighlightCardsForPlayer = (
   bestHand.cards = bestHand.cards.filter(item => item !== undefined)
 
   if (bestHand.name === 'High Card') {
-    const trueName = playerCards[0].rank === 'T' ? '10' : bestHand.cards[0].rank
+    const trueName = formatRankToGetHighlightName(bestHand.cards[0].rank)
     return { cards: [], name: `${trueName} High` }
   }
 
@@ -713,10 +732,10 @@ export const getHighlightCardsForPlayer = (
       if (cardCounts[cardValue] === 2) {
         const cards = bestHand.cards.filter(card => card.rank === cardValue)
 
-        const truePairName = cards[0].rank === 'T' ? '10' : cards[0].rank
+        const trueName = formatRankToGetHighlightName(cards[0].rank)
         const dataReturn = {
           cards: cards.map(card => unformatCards(card)),
-          name: `1 Pair ${truePairName}`,
+          name: `1 Pair ${trueName}`,
         }
         return dataReturn
       }
@@ -763,10 +782,10 @@ export const getHighlightCardsForPlayer = (
     for (let cardValue in cardCounts) {
       if (cardCounts[cardValue] === 3) {
         const cards = bestHand.cards.filter(card => card.rank === cardValue)
-        const truePairName = cards[0].rank === 'T' ? '10' : cards[0].rank
+        const trueName = formatRankToGetHighlightName(cards[0].rank)
         const dataReturn = {
           cards: cards.map(card => unformatCards(card)),
-          name: `Three of a kind ${truePairName}`,
+          name: `Three of a kind ${trueName}`,
         }
         return dataReturn
       }
@@ -787,10 +806,10 @@ export const getHighlightCardsForPlayer = (
     for (let cardValue in cardCounts) {
       if (cardCounts[cardValue] === 4) {
         const cards = bestHand.cards.filter(card => card.rank === cardValue)
-        const truePairName = cards[0].rank === 'T' ? '10' : cards[0].rank
+        const trueName = formatRankToGetHighlightName(cards[0].rank)
         const dataReturn = {
           cards: cards.map(card => unformatCards(card)),
-          name: `Four of a kind ${truePairName}`,
+          name: `Four of a kind ${trueName}`,
         }
         return dataReturn
       }
