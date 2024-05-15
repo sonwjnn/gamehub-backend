@@ -58,8 +58,9 @@ model Table {
   maxBuyIn Int @map(name: "max_buy_in")
   ante     Int @default(0)
 
-  handOver Boolean @default(true) @map(name: "hand_over")
-  deleted  Boolean @default(false) @map(name: "on_deleted")
+  handOver          Boolean @default(true) @map(name: "hand_over")
+  deleted           Boolean @default(false) @map(name: "on_deleted")
+  isBeginMatchStart Boolean @default(false) @map(name: "is_begin_match_start")
 
   players  Player[]
   messages Message[]
@@ -304,7 +305,6 @@ model Match {
   numberPlayers Int       @map(name: "number_players")
   deckId        String    @map(name: "deck_id")
   deck          Deck      @relation(fields: [deckId], references: [id])
-  board         Card[]
 
   pot        Int    @default(0)
   mainPot    Int    @default(0) @map(name: "main_pot")
@@ -330,6 +330,7 @@ model Match {
   bigBlindId String? @map(name: "big_blind_id")
   bigBlind   Player? @relation("BigBlindPlayer", fields: [bigBlindId], references: [id])
 
+  board         Card[]
   winners       Player[]
   participants  Participant[]
   sidePots      SidePot[]

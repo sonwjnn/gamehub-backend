@@ -58,7 +58,9 @@ const init = ({ socket, io }: IInIt) => {
 
       broadcastToTable(table, `${player.user?.username} joined`)
 
-      if (table?.players.length === 2) {
+      console.log(table?.players.length)
+
+      if (!table.isBeginMatchStart && table?.players.length >= 2) {
         // start game
         await initNewMatch(table.id, 8000)
       }
@@ -247,6 +249,15 @@ const init = ({ socket, io }: IInIt) => {
     if (table.players.length > 1) {
       broadcastToTable(table, 'New match starting in 8 seconds')
     }
+
+    await db.table.update({
+      where: {
+        id: tableId,
+      },
+      data: {
+        isBeginMatchStart: true,
+      },
+    })
 
     let elapsed = 0
     const interval = setInterval(async () => {
