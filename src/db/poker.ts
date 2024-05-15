@@ -757,8 +757,9 @@ export const getHighlightCardsForPlayer = (
 
   bestHand.cards = bestHand.cards.filter(item => item !== undefined)
 
+  const lastIndex = Math.max(bestHand.cards.length - 1 , 0)
   if (bestHand.name === 'High Card') {
-    const trueName = formatRankToGetHighlightName(bestHand.cards[0].rank)
+    const trueName = formatRankToGetHighlightName(bestHand.cards[lastIndex].rank)
     return { cards: [], name: `${trueName} High` }
   }
 
