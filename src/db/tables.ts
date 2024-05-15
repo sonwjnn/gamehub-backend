@@ -565,8 +565,9 @@ const findNextUnfoldedPlayer = (
   while (i < places) {
     current = current === players.length - 1 ? 0 : current + 1
     let hand = players[current].participants[0]
+    const stack = players[current].stack
 
-    if (hand && !hand.isFolded) i++
+    if (hand && !hand.isFolded && stack > 0) i++
   }
 
   return players[current].id
@@ -713,6 +714,15 @@ export const changeTurn = async (
       while (match && !match.isShowdown && !match.table.handOver) {
         match = await dealNextStreet(participant.matchId)
       }
+
+      await db.match.update({
+        where: {
+          id: match?.id,
+        },
+        data: {
+          isAllAllIn: true,
+        },
+      })
 
       return ''
     }

@@ -319,6 +319,7 @@ model Match {
   isTurn     Boolean @default(false) @map(name: "is_turn")
   isRiver    Boolean @default(false) @map(name: "is_river")
   isShowdown Boolean @default(false) @map(name: "is_showdown")
+  isAllAllIn Boolean @default(false) @map(name: "is_all_all_in")
 
   buttonId String? @map(name: "button_id")
   button   Player? @relation("ButtonPlayer", fields: [buttonId], references: [id])

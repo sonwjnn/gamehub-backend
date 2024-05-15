@@ -426,14 +426,14 @@ const init = ({ socket, io }: IInIt) => {
           }
 
           // end match
-          if (currentMatch?.table.handOver) {
-            await updateStatistical(newPlayers)
+          // if (currentMatch?.table.handOver) {
+          //   await updateStatistical(newPlayers)
 
-            const delay =
-              (!currentMatch.isShowdown && 8000) || DELAY_BETWEEN_MATCHES
+          //   const delay =
+          //     (!currentMatch.isShowdown && 8000) || DELAY_BETWEEN_MATCHES
 
-            await initNewMatch(currentMatch?.table.id, delay)
-          }
+          //   await initNewMatch(currentMatch?.table.id, delay)
+          // }
         }
       }, 1000)
     },
