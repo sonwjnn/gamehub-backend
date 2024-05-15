@@ -40,15 +40,22 @@ const removePlayer = async (req: Request, res: Response) => {
     const { id } = req.params
     const { tableId } = req.query
 
-    const playerExisting = await db.player.findUnique({
+    const tableExisting = await db.table.findUnique({
       where: {
-        id,
-        tableId: tableId as string,
+        id: tableId as string,
       },
       include: {
-        user: true,
+        players: true,
       },
     })
+
+    if (!tableExisting) {
+      return responseHandler.badrequest(res, 'Table not found')
+    }
+
+    const playerExisting = tableExisting.players.find(
+      player => player.id === id
+    )
 
     if (!playerExisting) {
       return responseHandler.badrequest(res, 'Player not found')
@@ -74,6 +81,21 @@ const removePlayer = async (req: Request, res: Response) => {
         user: true,
       },
     })
+
+    const updatedPlayers = tableExisting.players.filter(
+      player => player.id !== id
+    )
+
+    if (updatedPlayers.length === 1) {
+      await db.table.update({
+        where: {
+          id: tableId as string,
+        },
+        data: {
+          handOver: true,
+        },
+      })
+    }
 
     res?.app
       .get('io')

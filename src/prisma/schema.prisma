@@ -58,9 +58,8 @@ model Table {
   maxBuyIn Int @map(name: "max_buy_in")
   ante     Int @default(0)
 
-  handOver          Boolean @default(true) @map(name: "hand_over")
-  deleted           Boolean @default(false) @map(name: "on_deleted")
-  isBeginMatchStart Boolean @default(false) @map(name: "is_begin_match_start")
+  handOver Boolean @default(true) @map(name: "hand_over")
+  deleted  Boolean @default(false) @map(name: "on_deleted")
 
   players  Player[]
   messages Message[]

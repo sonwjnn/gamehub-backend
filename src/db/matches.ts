@@ -43,6 +43,10 @@ export const createMatch = async (tableId: string) => {
       return { match: null, playerId: null }
     }
 
+    if (table.players.length < 2) {
+      return { match: null, playerId: null }
+    }
+
     await updatePreviousStackPlayers(table.players)
 
     const participants = table.players.map(player => player.id)
