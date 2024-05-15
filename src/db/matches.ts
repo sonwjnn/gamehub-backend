@@ -124,7 +124,7 @@ export const createMatch = async (tableId: string) => {
       ? findNextActivePlayer(table.players, buttonId, 1)
       : findNextActivePlayer(table.players, buttonId, 2)
 
-    const minBet = table.minBuyIn / 200
+    const minBet = Math.floor(table.minBuyIn / 200)
     const pot = minBet * 3 + anteSum
     const callAmount = minBet * 2
     const minRaise = minBet * 4
