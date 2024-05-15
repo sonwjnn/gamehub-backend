@@ -186,6 +186,7 @@ const endHand = async (tableId: string) => {
       },
       data: {
         handOver: true,
+        isBeginMatchStart: false,
       },
     })
   } catch (error) {
