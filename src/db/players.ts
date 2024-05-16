@@ -104,9 +104,24 @@ export const removePlayerBySocketId = async (socketId: string) => {
       },
     })
 
-    const updatedTable = await getTableById(player.tableId)
+    const table = await getTableById(player.tableId)
 
-    return { ...player, table: updatedTable }
+    if (!table) {
+      return null
+    }
+
+    if (table.players.length === 1) {
+      await db.table.update({
+        where: {
+          id: table.id,
+        },
+        data: {
+          handOver: true,
+        },
+      })
+    }
+
+    return { ...player, table }
   } catch (error) {
     console.log(error)
 

@@ -176,7 +176,10 @@ const createPlayer = async (req: Request, res: Response) => {
       },
     })
 
-    res?.app.get('io').emit(PokerActions.JOIN_TABLE, { tableId, player })
+    res?.app.get('io').emit(PokerActions.JOIN_TABLE, {
+      tableId,
+      player,
+    })
 
     responseHandler.ok(res, player)
   } catch (error) {

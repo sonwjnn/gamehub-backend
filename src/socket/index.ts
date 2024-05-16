@@ -22,6 +22,7 @@ import { changeTurn, getTableById } from '../db/tables'
 import { createMatch } from '../db/matches'
 import { removePlayerBySocketId } from '../db/players'
 import { formattedCards, getHighlightCardsForPlayer } from '../db/poker'
+import { Mutex } from 'async-mutex'
 
 interface IInIt {
   socket: Socket<
@@ -58,11 +59,8 @@ const init = ({ socket, io }: IInIt) => {
 
       broadcastToTable(table, `${player.user?.username} joined`)
 
-      console.log(table?.players.length)
-
       if (table.handOver && table.players.length === 2) {
-        // start game
-        await initNewMatch(table.id, 8000)
+        await initNewMatch(tableId, 8000)
       }
     }
   )
@@ -380,7 +378,7 @@ const init = ({ socket, io }: IInIt) => {
           for (let i = 0; i < newPlayers.length; i++) {
             let socketId = newPlayers[i].socketId as string
             io.to(socketId).emit(PokerActions.CHANGE_TURN, {
-              match: currentMatch,
+              matchData: currentMatch,
               playerId,
             })
           }
@@ -431,8 +429,25 @@ const init = ({ socket, io }: IInIt) => {
           if (currentMatch?.table.handOver) {
             await updateStatistical(newPlayers)
 
+            // calculate complete delay for all player allin
+            let completeDelay = DELAY_BETWEEN_MATCHES
+
+            if (currentMatch?.roundNameBeforeComplete === 'PreFlop') {
+              completeDelay = 20000
+            } else if (currentMatch?.roundNameBeforeComplete === 'Flop') {
+              completeDelay = 18000
+            } else if (currentMatch?.roundNameBeforeComplete === 'Turn') {
+              completeDelay = 17000
+            } else if (currentMatch?.roundNameBeforeComplete === 'River') {
+              completeDelay = 16000
+            }
+
             const delay =
-              (!currentMatch.isShowdown && 8000) || DELAY_BETWEEN_MATCHES
+              (!currentMatch.isShowdown && 8000) ||
+              (currentMatch.isShowdown &&
+                currentMatch.isAllAllIn &&
+                completeDelay) ||
+              DELAY_BETWEEN_MATCHES
 
             await initNewMatch(currentMatch?.table.id, delay)
           }

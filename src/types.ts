@@ -48,9 +48,11 @@ export interface ServerToClientEvents {
   [PokerActions.JOIN_TABLE]: ({
     tableId,
     player,
+    playerLength,
   }: {
     tableId: string
     player: Player
+    playerLength: number
   }) => void
 
   [PokerActions.LEAVE_TABLE]: ({
@@ -90,10 +92,10 @@ export interface ServerToClientEvents {
 
   [PokerActions.DISCONNECTED]: ({ table }: { table: Table }) => void
   [PokerActions.CHANGE_TURN]: ({
-    match,
+    matchData,
     playerId,
   }: {
-    match: Match | null
+    matchData: Match | null
     playerId: string
   }) => void
   [PokerActions.FOLD]: ({
