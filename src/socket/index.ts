@@ -39,7 +39,7 @@ interface IInIt {
   >
 }
 
-const DELAY_BETWEEN_MATCHES = 15000
+const DELAY_BETWEEN_MATCHES = 12000
 
 const init = ({ socket, io }: IInIt) => {
   socket.on(
@@ -60,7 +60,7 @@ const init = ({ socket, io }: IInIt) => {
       broadcastToTable(table, `${player.user?.username} joined`)
 
       if (table.handOver && table.players.length === 2) {
-        await initNewMatch(tableId, 8000)
+        await initNewMatch(tableId, 3000)
       }
     }
   )
@@ -443,7 +443,7 @@ const init = ({ socket, io }: IInIt) => {
             }
 
             const delay =
-              (!currentMatch.isShowdown && 8000) ||
+              (!currentMatch.isShowdown && 3000) ||
               (currentMatch.isShowdown &&
                 currentMatch.isAllAllIn &&
                 completeDelay) ||

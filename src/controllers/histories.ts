@@ -44,7 +44,15 @@ const getHistoriesByUserId = async (req: Request, res: Response) => {
       type: 'lose',
     }))
 
-    responseHandler.ok(res, [...formatedWinHistories, ...formatedLoseHistories])
+    responseHandler.ok(
+      res,
+      [...formatedWinHistories, ...formatedLoseHistories].sort((a, b) => {
+        const dateA = new Date(a.createdAt)
+        const dateB = new Date(b.createdAt)
+
+        return dateB.getTime() - dateA.getTime()
+      })
+    )
   } catch (error) {
     console.log(error)
     responseHandler.error(res)
