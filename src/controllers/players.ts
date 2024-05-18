@@ -140,6 +140,19 @@ const createPlayer = async (req: Request, res: Response) => {
   try {
     const { tableId, userId, socketId, buyIn } = req.body
 
+    const existingTable = await db.table.findUnique({
+      where: {
+        id: tableId,
+      },
+      include: {
+        players: true,
+      },
+    })
+
+    if (!existingTable || existingTable.players.length >= 10) {
+      return responseHandler.badrequest(res, 'Table is full')
+    }
+
     const isExistingPlayer = await db.player.findFirst({
       where: {
         tableId,
@@ -253,7 +266,7 @@ const rebuy = async (req: Request, res: Response) => {
         id: isExistingPlayer.id,
       },
       data: {
-        buyIn: {
+        previousStack: {
           increment: buyIn,
         },
         stack: {
