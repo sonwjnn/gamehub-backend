@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
 import { getTableById, getTables, updateTableById } from '../db/tables'
+import { PokerActions } from '../pokergame/actions'
 
 const getAllTables = async (req: Request, res: Response) => {
   try {
@@ -48,7 +49,7 @@ const deleteTableById = async (req: Request, res: Response) => {
 const updateTable = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
-    const { minBuyIn, maxBuyIn, name, ante } = req.body
+    const { minBuyIn, maxBuyIn, name, ante, chatBanned } = req.body
 
     const table = await db.table.update({
       where: {
@@ -59,7 +60,12 @@ const updateTable = async (req: Request, res: Response) => {
         maxBuyIn,
         name,
         ante,
+        chatBanned,
       },
+    })
+
+    res?.app.get('io').emit(PokerActions.TABLE_UPDATED, {
+      table,
     })
 
     responseHandler.ok(res, table)

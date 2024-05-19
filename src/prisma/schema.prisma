@@ -58,8 +58,9 @@ model Table {
   maxBuyIn Int @map(name: "max_buy_in")
   ante     Int @default(0)
 
-  handOver Boolean @default(true) @map(name: "hand_over")
-  deleted  Boolean @default(false) @map(name: "on_deleted")
+  handOver   Boolean @default(true) @map(name: "hand_over")
+  deleted    Boolean @default(false) @map(name: "on_deleted")
+  chatBanned Boolean @default(false) @map(name: "chat_banned")
 
   players  Player[]
   messages Message[]
@@ -190,10 +191,11 @@ model Message {
   tableId String @map(name: "table_id")
   table   Table  @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  content  String
-  playerId String  @map(name: "player_id")
-  player   Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  deleted  Boolean @default(false)
+  content       String
+  emojiImageSrc String? @map(name: "emoji_image_src")
+  playerId      String  @map(name: "player_id")
+  player        Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  deleted       Boolean @default(false)
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 

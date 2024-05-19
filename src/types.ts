@@ -55,6 +55,8 @@ export interface ServerToClientEvents {
     playerLength: number
   }) => void
 
+  [PokerActions.TABLES_UPDATED]: ({ table }: { table: Table }) => void
+
   [PokerActions.LEAVE_TABLE]: ({
     tableId,
     playerId,
