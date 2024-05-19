@@ -34,7 +34,7 @@ const update = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params
 
-    const { image, name } = req.body
+    const { image, name, username } = req.body
 
     const existingUser = await getUserById(id)
 
@@ -42,7 +42,21 @@ const update = async (req: express.Request, res: express.Response) => {
       return responseHandler.badrequest(res, 'User not found')
     }
 
-    const updatedUser = await updateUserById(existingUser.id, { image, name })
+    const existingUsername = await db.user.findUnique({
+      where: {
+        username,
+      },
+    })
+
+    if (existingUsername && existingUsername.id !== existingUser.id) {
+      return responseHandler.badrequest(res, 'Username already exists')
+    }
+
+    const updatedUser = await updateUserById(existingUser.id, {
+      image,
+      name,
+      username,
+    })
 
     responseHandler.ok(res, {
       ...updatedUser,

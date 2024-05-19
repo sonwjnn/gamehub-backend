@@ -104,10 +104,65 @@ const getTable = async (req: Request, res: Response) => {
   }
 }
 
+const switchTable = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+
+    const existingTable = await db.table.findUnique({
+      where: {
+        id,
+      },
+    })
+
+    if (!existingTable) {
+      return responseHandler.badrequest(res, 'Table not found')
+    }
+
+    const tables = await db.table.findMany({
+      include: {
+        players: true,
+      },
+    })
+
+    const sameBuyInTables = tables.filter(
+      table => table.minBuyIn === existingTable.minBuyIn
+    )
+
+    // Filter tables that are not full
+    const notFullTables = sameBuyInTables.filter(
+      table => table.players.length < table.maxPlayers
+    )
+
+    // If there are not full tables, use them, otherwise use all tables
+    const targetTables =
+      notFullTables.length > 0 ? notFullTables : sameBuyInTables
+
+    const currentTableIndex = targetTables.findIndex(
+      table => table.id === existingTable.id
+    )
+
+    let nextTable = null
+    if (currentTableIndex + 1 < targetTables.length) {
+      nextTable = targetTables[currentTableIndex + 1]
+    } else {
+      nextTable = targetTables[0]
+    }
+
+    if (!nextTable) {
+      return responseHandler.badrequest(res, 'Table not found')
+    }
+
+    responseHandler.ok(res, { id: nextTable.id })
+  } catch (error) {
+    responseHandler.error(res)
+  }
+}
+
 export default {
   getTable,
   createTable,
   getAllTables,
   deleteTableById,
   updateTable,
+  switchTable,
 }

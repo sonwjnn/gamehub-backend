@@ -8,9 +8,10 @@ const router = express.Router({ mergeParams: true })
 export default (): express.Router => {
   router.get('/', tableController.getAllTables)
   router.get('/:id', tableController.getTable)
+  router.get('/switch/:id', tableController.switchTable)
   router.post('/', tableController.createTable)
-  router.delete('/:id', tableController.deleteTableById)
   router.put('/:id', requestHandler.validate, tableController.updateTable)
+  router.delete('/:id', tableController.deleteTableById)
 
   return router
 }
