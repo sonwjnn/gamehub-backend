@@ -57,7 +57,7 @@ const init = ({ socket, io }: IInIt) => {
         return
       }
 
-      broadcastToTable(table, `${player.user?.username} joined`)
+      broadcastToTable(table, `${player.user?.name} joined`)
 
       if (table.handOver && table.players.length === 2) {
         await initNewMatch(tableId, 3000)
@@ -75,7 +75,7 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!currentPlayer) return null
 
-    broadcastToTable(table, `${currentPlayer.user?.username} left`)
+    broadcastToTable(table, `${currentPlayer.user?.name} left`)
 
     if (table?.players.length === 1) {
       clearForOnePlayer(table)
@@ -99,7 +99,7 @@ const init = ({ socket, io }: IInIt) => {
 
       broadcastToTable(
         table,
-        `${player.user?.username} is rebought $${player.stack}`
+        `${player.user?.name} is rebought $${player.stack}`
       )
     }
   )
@@ -180,7 +180,7 @@ const init = ({ socket, io }: IInIt) => {
 
     const table = player.table
 
-    broadcastToTable(table, `${player.user?.username} left`)
+    broadcastToTable(table, `${player.user?.name} left`)
 
     for (let i = 0; i < table.players.length; i++) {
       let socketId = table.players[i].socketId as string

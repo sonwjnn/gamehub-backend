@@ -25,10 +25,10 @@ const getMessages = async (req: Request, res: Response) => {
 
 const createMessage = async (req: Request, res: Response) => {
   try {
-    const { content, user } = req.body
+    const { content, user, stickerImageSrc } = req.body
     const { tableId } = req.query
 
-    if (!content || !user || !tableId) {
+    if (!user || !tableId || (!content && !stickerImageSrc)) {
       return responseHandler.notfound(res)
     }
 
@@ -56,7 +56,8 @@ const createMessage = async (req: Request, res: Response) => {
 
     const message = await db.message.create({
       data: {
-        content,
+        content: content || '',
+        stickerImageSrc: stickerImageSrc || '',
         tableId: tableId as string,
         playerId: player.id,
       },

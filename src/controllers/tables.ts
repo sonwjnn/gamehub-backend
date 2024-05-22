@@ -113,6 +113,7 @@ const getTable = async (req: Request, res: Response) => {
 const switchTable = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
+    const { playerId } = req.body
 
     const existingTable = await db.table.findUnique({
       where: {
@@ -140,8 +141,11 @@ const switchTable = async (req: Request, res: Response) => {
     )
 
     // If there are not full tables, use them, otherwise use all tables
-    const targetTables =
-      notFullTables.length > 0 ? notFullTables : sameBuyInTables
+    const targetTables = notFullTables.length > 0 ? notFullTables : null
+
+    if (!targetTables) {
+      return responseHandler.badrequest(res, 'Table is full')
+    }
 
     const currentTableIndex = targetTables.findIndex(
       table => table.id === existingTable.id
@@ -158,8 +162,29 @@ const switchTable = async (req: Request, res: Response) => {
       return responseHandler.badrequest(res, 'Table not found')
     }
 
-    responseHandler.ok(res, { id: nextTable.id })
+    const existingPlayer = await db.player.findUnique({
+      where: {
+        id: playerId,
+      },
+      include: {
+        user: true,
+      },
+    })
+
+    if (!existingPlayer) {
+      return responseHandler.badrequest(res, 'Player not found')
+    }
+
+    if (
+      existingPlayer.stack + existingPlayer.user.chipsAmount <
+      nextTable.minBuyIn
+    ) {
+      return responseHandler.badrequest(res, 'Not enough chips')
+    }
+
+    responseHandler.ok(res, nextTable)
   } catch (error) {
+    console.log(error)
     responseHandler.error(res)
   }
 }

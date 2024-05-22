@@ -191,11 +191,11 @@ model Message {
   tableId String @map(name: "table_id")
   table   Table  @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
-  content       String
-  emojiImageSrc String? @map(name: "emoji_image_src")
-  playerId      String  @map(name: "player_id")
-  player        Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  deleted       Boolean @default(false)
+  content         String
+  stickerImageSrc String? @map(name: "sticker_image_src")
+  playerId        String  @map(name: "player_id")
+  player          Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  deleted         Boolean @default(false)
 
   createdAt DateTime @default(now()) @map(name: "created_at")
 

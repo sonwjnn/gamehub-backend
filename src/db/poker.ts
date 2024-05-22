@@ -196,9 +196,11 @@ const sortHand = (cards: CustomCard[]) => {
 
 export const getBestHand = (cards: CustomCard[]): Hand => {
   // Of a list of 7 cards in 'CARDS', return the best hand possible. Assumes cards == length 7.
-  // x = hasStraightFlush(cards)
-  // if (x) { return x }
   let x
+  x = hasStraightFlush(cards)
+  if (x.cards.length != 0) {
+    return x
+  }
 
   x = hasFourOfAKind(cards)
   if (x.cards.length != 0) {
@@ -516,11 +518,15 @@ const hasStraight = (cards: CustomCard[]): Hand => {
       ['14', '2', '3', '4', '5'].includes(card.rank)
     )
 
-    const formattedStraight = aceLowStraight.map(item => {
-      if (item.rank === '14') return { ...item, rank: '1' }
-      return item
-    })
-    straights.push(formattedStraight)
+    const formattedStraight = aceLowStraight
+      .reduce((acc, item) => {
+        if (item.rank === '14') item = { ...item, rank: '1' }
+        if (!acc.has(item.rank)) acc.set(item.rank, item)
+        return acc
+      }, new Map())
+      .values()
+
+    straights.push([...formattedStraight])
   }
 
   if (straights.length > 0) {
@@ -654,18 +660,92 @@ const hasFourOfAKind = (cards: CustomCard[]): Hand => {
 }
 
 const hasStraightFlush = (cards: CustomCard[]): Hand => {
-  let flushCards = hasFlush(cards)
-  if (flushCards.cards.length == 0) {
-    return { cards: [], name: '' }
-    // 1, 2, 3, 4, 5 || 1, 13, 12, 11, 10
-  } else {
-    let sf = hasStraight(flushCards.cards.slice(0, 5))
-    if (sf.cards.length != 0) {
-      sf = { cards: sf.cards.slice(0, 5), name: '' }
-      // sf.push('Straight Flush')
+  // 1, 2, 3, 4, 5 || 1, 13, 12, 11, 10
+
+  // let flushHand = hasFlush(cards)
+  // if (flushHand.cards.length < 5) {
+  //   return { cards: [], name: '' }
+  // } else {
+  //   let straightFlushHand = hasStraight(cards)
+  //   if (straightFlushHand.cards.length === 5) {
+  //     return { cards: straightFlushHand.cards, name: 'Straight Flush' }
+  //   } else {
+  //     return { cards: [], name: '' }
+  //   }
+  // }
+
+  
+
+  let sortedCards = sortHand(cards).map(item => {
+    if (item.rank === '1') return { ...item, rank: '14' }
+    return item
+  })
+  let straights: CustomCard[][] = []
+  let temp: CustomCard[] = [sortedCards[0]]
+
+  for (let i = 1; i < sortedCards.length; i++) {
+    let currentRank = parseInt(sortedCards[i].rank)
+    let tempRank = parseInt(temp[temp.length - 1].rank)
+
+    if (currentRank === tempRank + 1) {
+      temp.push(sortedCards[i])
+      console.log(temp)
+      if (temp.length === 5) {
+        straights.push([...temp])
+        temp.shift()
+      }
+    } else {
+      if (temp.length >= 5) {
+        straights.push([...temp])
+      }
+      temp = [sortedCards[i]]
     }
-    return sf
   }
+
+  if (temp.length >= 5) {
+    straights.push([...temp])
+  }
+
+  // Check for Ace-low straight
+  if (
+    sortedCards.some(card => card.rank === '14') &&
+    sortedCards.some(card => card.rank === '2') &&
+    sortedCards.some(card => card.rank === '3') &&
+    sortedCards.some(card => card.rank === '4') &&
+    sortedCards.some(card => card.rank === '5')
+  ) {
+    let aceLowStraight = sortedCards.filter(card =>
+      ['14', '2', '3', '4', '5'].includes(card.rank)
+    )
+
+    const formattedStraight = aceLowStraight
+      .reduce((acc, item) => {
+        if (item.rank === '14') item = { ...item, rank: '1' }
+        if (!acc.has(item.rank)) acc.set(item.rank, item)
+        return acc
+      }, new Map())
+      .values()
+
+    straights.push([...formattedStraight])
+  }
+
+  if (straights.length > 0) {
+    const straightsWant = [
+      ['10', '11', '12', '13', '1'],
+      ['2', '3', '4', '5', '1'],
+    ]
+
+    let straightFlushes = straights.filter(straight => {
+      return straightsWant.some(want => {
+        return straight.every((card, index) => card.rank === want[index])
+      })
+    })
+
+    if (straightFlushes.length > 0) {
+      return { cards: straightFlushes[0], name: 'Straight Flush' }
+    }
+  }
+  return { cards: [], name: '' }
 }
 
 export const getWinner2 = async (
@@ -757,9 +837,11 @@ export const getHighlightCardsForPlayer = (
 
   bestHand.cards = bestHand.cards.filter(item => item !== undefined)
 
-  const lastIndex = Math.max(bestHand.cards.length - 1 , 0)
+  const lastIndex = Math.max(bestHand.cards.length - 1, 0)
   if (bestHand.name === 'High Card') {
-    const trueName = formatRankToGetHighlightName(bestHand.cards[lastIndex].rank)
+    const trueName = formatRankToGetHighlightName(
+      bestHand.cards[lastIndex].rank
+    )
     return { cards: [], name: `${trueName} High` }
   }
 
