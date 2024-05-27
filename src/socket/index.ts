@@ -316,143 +316,135 @@ const init = ({ socket, io }: IInIt) => {
     }, 5000)
   }
 
-  const changeTurnAndBroadcast = (
+  const changeTurnAndBroadcast = async (
       table: TableWithPlayers,
       participant: Participant
     ) => {
-      let elapsed = 0
-      const interval = setInterval(async () => {
-        elapsed += 1000 // assuming this function is called every 1 second
-        if (elapsed >= 1000) {
-          clearInterval(interval)
+      const playerId = await changeTurn(table, participant)
 
-          const playerId = await changeTurn(table, participant)
-
-          const currentMatch = await db.match.findUnique({
-            where: {
-              id: participant.matchId,
-            },
+      const currentMatch = await db.match.findUnique({
+        where: {
+          id: participant.matchId,
+        },
+        include: {
+          table: {
             include: {
-              table: {
+              players: {
                 include: {
-                  players: {
-                    include: {
-                      user: true,
-                    },
-                  },
-                },
-              },
-              board: true,
-              participants: {
-                include: {
-                  player: {
-                    include: {
-                      user: true,
-                    },
-                  },
-                  cardOne: true,
-                  cardTwo: true,
-                },
-              },
-              winners: true,
-              winMessages: {
-                orderBy: {
-                  createdAt: 'desc',
+                  user: true,
                 },
               },
             },
-          })
+          },
+          board: true,
+          participants: {
+            include: {
+              player: {
+                include: {
+                  user: true,
+                },
+              },
+              cardOne: true,
+              cardTwo: true,
+            },
+          },
+          winners: true,
+          winMessages: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
+      })
 
-          const newPlayers = currentMatch?.table?.players || []
+      const newPlayers = currentMatch?.table?.players || []
 
-          for (let i = 0; i < newPlayers.length; i++) {
-            let socketId = newPlayers[i].socketId as string
-            io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
-              tableId: table.id,
-              players: newPlayers.map(item => {
-                return { ...item, isTurn: false }
-              }),
-            })
-          }
+      for (let i = 0; i < newPlayers.length; i++) {
+        let socketId = newPlayers[i].socketId as string
+        io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
+          tableId: table.id,
+          players: newPlayers.map(item => {
+            return { ...item, isTurn: false }
+          }),
+        })
+      }
 
-          for (let i = 0; i < newPlayers.length; i++) {
-            let socketId = newPlayers[i].socketId as string
-            io.to(socketId).emit(PokerActions.CHANGE_TURN, {
-              matchData: currentMatch,
-              playerId,
-            })
-          }
+      for (let i = 0; i < newPlayers.length; i++) {
+        let socketId = newPlayers[i].socketId as string
+        io.to(socketId).emit(PokerActions.CHANGE_TURN, {
+          matchData: currentMatch,
+          playerId,
+        })
+      }
 
-          let boardCards = [] as Card[]
-          if (currentMatch?.board) {
-            if (
-              currentMatch.isFlop &&
-              !currentMatch.isTurn &&
-              !currentMatch.isRiver
-            ) {
-              boardCards = currentMatch.board.slice(0, 3)
-            }
-            if (currentMatch.isTurn && !currentMatch.isRiver) {
-              boardCards = currentMatch.board.slice(0, 4)
-            }
-            if (currentMatch.isRiver) {
-              boardCards = currentMatch.board
-            }
-          }
-
-          const formattedBoard = boardCards.map(card => formattedCards(card))
-
-          for (let i = 0; i < newPlayers.length; i++) {
-            let socketId = newPlayers[i].socketId as string
-
-            const participant = currentMatch?.participants.find(
-              participant => participant.playerId === newPlayers[i].id
-            )
-
-            if (!participant || !participant.cardOne || !participant.cardTwo)
-              continue
-
-            const formattedParticipantCards = [
-              formattedCards(participant.cardOne),
-              formattedCards(participant.cardTwo),
-            ]
-
-            const cards = getHighlightCardsForPlayer(
-              formattedBoard,
-              formattedParticipantCards
-            )
-
-            io.to(socketId).emit(PokerActions.HIGHLIGHT_CARDS, cards)
-          }
-
-          // end match
-          if (currentMatch?.table.handOver) {
-            await updateStatistical(newPlayers)
-
-            // calculate complete delay for all player allin
-            let completeDelay = DELAY_BETWEEN_MATCHES
-
-            if (currentMatch?.roundNameBeforeComplete === 'PreFlop') {
-              completeDelay = 20000
-            } else if (currentMatch?.roundNameBeforeComplete === 'Flop') {
-              completeDelay = 18000
-            } else if (currentMatch?.roundNameBeforeComplete === 'Turn') {
-              completeDelay = 17000
-            } else if (currentMatch?.roundNameBeforeComplete === 'River') {
-              completeDelay = 16000
-            }
-
-            const delay =
-              (!currentMatch.isShowdown && 3000) ||
-              (currentMatch.isShowdown &&
-                currentMatch.isAllAllIn &&
-                completeDelay) ||
-              DELAY_BETWEEN_MATCHES
-
-            await initNewMatch(currentMatch?.table.id, delay)
-          }
+      let boardCards = [] as Card[]
+      if (currentMatch?.board) {
+        if (
+          currentMatch.isFlop &&
+          !currentMatch.isTurn &&
+          !currentMatch.isRiver
+        ) {
+          boardCards = currentMatch.board.slice(0, 3)
         }
-      }, 1000)
+        if (currentMatch.isTurn && !currentMatch.isRiver) {
+          boardCards = currentMatch.board.slice(0, 4)
+        }
+        if (currentMatch.isRiver) {
+          boardCards = currentMatch.board
+        }
+      }
+
+      const formattedBoard = boardCards.map(card => formattedCards(card))
+
+      for (let i = 0; i < newPlayers.length; i++) {
+        let socketId = newPlayers[i].socketId as string
+
+        const participant = currentMatch?.participants.find(
+          participant => participant.playerId === newPlayers[i].id
+        )
+
+        if (!participant || !participant.cardOne || !participant.cardTwo)
+          continue
+
+        const formattedParticipantCards = [
+          formattedCards(participant.cardOne),
+          formattedCards(participant.cardTwo),
+        ]
+
+        const cards = getHighlightCardsForPlayer(
+          formattedBoard,
+          formattedParticipantCards
+        )
+
+        io.to(socketId).emit(PokerActions.HIGHLIGHT_CARDS, cards)
+      }
+
+      // end match
+      if (currentMatch?.table.handOver) {
+        await updateStatistical(newPlayers)
+
+        // calculate complete delay for all player allin
+        let completeDelay = DELAY_BETWEEN_MATCHES
+
+        if (currentMatch?.roundNameBeforeComplete === 'PreFlop') {
+          completeDelay = 20000
+        } else if (currentMatch?.roundNameBeforeComplete === 'Flop') {
+          completeDelay = 18000
+        } else if (currentMatch?.roundNameBeforeComplete === 'Turn') {
+          completeDelay = 17000
+        } else if (currentMatch?.roundNameBeforeComplete === 'River') {
+          completeDelay = 16000
+        }
+
+        const delay =
+          (!currentMatch.isShowdown && 3000) ||
+          (currentMatch.isShowdown &&
+            currentMatch.isAllAllIn &&
+            completeDelay) ||
+          DELAY_BETWEEN_MATCHES
+
+        await initNewMatch(currentMatch?.table.id, delay)
+      }
     },
     updateStatistical = async (players: PlayerWithUser[]) => {
       for (let i = 0; i < players.length; i++) {
