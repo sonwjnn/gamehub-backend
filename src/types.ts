@@ -107,6 +107,13 @@ export interface ServerToClientEvents {
     tableId: string
     participantId: string
   }) => void
+  [PokerActions.HAND_SHOWED]: ({
+    tableId,
+    playerId,
+  }: {
+    tableId: string
+    playerId: string
+  }) => void
 }
 
 export interface ClientToServerEvents {
@@ -179,6 +186,13 @@ export interface ClientToServerEvents {
     participantId: string
     amount: number
     type: RaiseType
+  }) => void
+  [PokerActions.SHOW_HAND]: ({
+    tableId,
+    playerId,
+  }: {
+    tableId: string
+    playerId: string
   }) => void
 }
 

@@ -173,6 +173,26 @@ const init = ({ socket, io }: IInIt) => {
     changeTurnAndBroadcast(table, participant)
   })
 
+  socket.on(PokerActions.SHOW_HAND, async ({ tableId, playerId }) => {
+    const table = await getTableById(tableId)
+
+    if (!table) return
+
+    const player = table.players.find(p => p.id === playerId)
+
+    if (!player) return
+
+    const players = table.players
+
+    for (let i = 0; i < players.length; i++) {
+      let socketId = players[i].socketId as string
+      io.to(socketId).emit(PokerActions.HAND_SHOWED, {
+        tableId,
+        playerId,
+      })
+    }
+  })
+
   socket.on('disconnect', async () => {
     const player = await removePlayerBySocketId(socket.id)
 
@@ -437,7 +457,7 @@ const init = ({ socket, io }: IInIt) => {
         }
 
         const delay =
-          (!currentMatch.isShowdown && 3000) ||
+          (!currentMatch.isShowdown && 6000) ||
           (currentMatch.isShowdown &&
             currentMatch.isAllAllIn &&
             completeDelay) ||
