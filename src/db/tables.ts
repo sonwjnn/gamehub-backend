@@ -147,7 +147,7 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayerAndCards) => {
       data: {
         userId: winnerPlayer.userId,
         matchId: winner.matchId,
-        content: `${winnerPlayer.user.username} win ${currentMatch.pot}$ without showdown!`,
+        content: `${winnerPlayer.user.name} win ${currentMatch.pot}$ without showdown!`,
         amount: currentMatch.pot,
       },
     })
@@ -425,7 +425,7 @@ const determineWinner = async (
           data: {
             userId: player.userId,
             matchId: winnerParticipant.matchId,
-            content: `${player.user.username} wins $${amount} with ${winner.handName}`,
+            content: `${player.user.name} wins $${amount} with ${winner.handName}`,
             amount,
             handName: winner.handName,
             bestHand: winner.bestHand,
