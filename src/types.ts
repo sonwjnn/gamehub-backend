@@ -92,6 +92,14 @@ export interface ServerToClientEvents {
     players: PlayerWithUser[]
   }) => void
 
+  [PokerActions.PARTICIPANTS_UPDATED]: ({
+    tableId,
+    participant,
+  }: {
+    tableId: string
+    participant: Participant
+  }) => void
+
   [PokerActions.DISCONNECTED]: ({ table }: { table: Table }) => void
   [PokerActions.CHANGE_TURN]: ({
     matchData,

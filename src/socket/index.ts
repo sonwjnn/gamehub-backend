@@ -168,6 +168,16 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!participant) return
 
+    const players = table.players
+
+    for (let i = 0; i < players.length; i++) {
+      let socketId = players[i].socketId as string
+      io.to(socketId).emit(PokerActions.PARTICIPANTS_UPDATED, {
+        tableId,
+        participant,
+      })
+    }
+
     broadcastToTable(table, `player ${participant.player.user.username} called`)
 
     changeTurnAndBroadcast(table, participant)
