@@ -73,7 +73,10 @@ export interface ServerToClientEvents {
   }) => void
 
   [PokerActions.UPDATE_STATISTICAL]: (data: Statistical) => void
-  [PokerActions.HIGHLIGHT_CARDS]: (data: HighlightCard) => void
+  [PokerActions.HIGHLIGHT_CARDS]: (
+    data: HighlightCard,
+    isAllAllIn: boolean
+  ) => void
   [PokerActions.MATCH_STARTED]: ({
     tableId,
     match,
