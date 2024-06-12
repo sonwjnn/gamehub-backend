@@ -126,7 +126,7 @@ export const getWinner = async (
 
   let winnerHand = getBestHand(winnerCardsWithBoard)
 
-  console.log('best hand 1: ', winnerHand)
+  // console.log('best hand 1: ', winnerHand)
   let ties = [] as getWinnerResponse[]
   for (let i = 1; i < formattedPaticipants.length; i++) {
     let participant = formattedPaticipants[i]
@@ -136,7 +136,7 @@ export const getWinner = async (
       participant.cardTwo,
     ])
 
-    console.log('best hand 2: ', participantHand)
+    // console.log('best hand 2: ', participantHand)
 
     let comparison = compareHands(winnerHand, participantHand)
     if (comparison == 1) {
@@ -162,8 +162,6 @@ export const getWinner = async (
   if (ties.length > 0) {
     return ties
   }
-
-  console.log('winner: ', winner.id)
 
   const res = [
     {
@@ -481,11 +479,22 @@ const hasThreeOfAKind = (cards: CustomCard[]): Hand => {
   return { cards: hand, name: 'Three of a kind' }
 }
 
+const getUniqueRanks = (cards: CustomCard[]): CustomCard[] => {
+  let uniqueRanks = cards.reduce((acc, item) => {
+    if (!acc.has(item.rank)) acc.set(item.rank, item)
+    return acc
+  }, new Map())
+  return Array.from(uniqueRanks.values())
+}
+
 const hasStraight = (cards: CustomCard[]): Hand => {
-  let sortedCards = sortHand(cards).map(item => {
+  const uniqueRanksCards = getUniqueRanks(cards)
+
+  let sortedCards = sortHand(uniqueRanksCards).map(item => {
     if (item.rank === '1') return { ...item, rank: '14' }
     return item
   })
+
   let straights: CustomCard[][] = []
   let temp: CustomCard[] = [sortedCards[0]]
 
@@ -680,8 +689,6 @@ const hasStraightFlush = (cards: CustomCard[]): Hand => {
 
   const highestSuitCards = getHighestSuit(cards)
 
-  console.log('highestSuitCards', highestSuitCards)
-
   if (highestSuitCards.length >= 5) {
     let straightFlushHand = hasStraight(highestSuitCards)
     if (straightFlushHand.cards.length === 5) {
@@ -748,14 +755,6 @@ export const getWinner2 = async (
       formatCardForSolver(item)
     ) as [PlayingCard, PlayingCard, PlayingCard, PlayingCard, PlayingCard]
 
-    console.log(
-      formattedBoard,
-      formattedPaticipants.map(participant => [
-        participant.cardOne,
-        participant.cardTwo,
-      ])
-    )
-
     const res = rankHands(
       gameType,
       formattedBoard,
@@ -764,8 +763,6 @@ export const getWinner2 = async (
         participant.cardTwo,
       ])
     )
-
-    console.log(res)
 
     const highestRank = res.reduce(
       (minRank, player) => Math.min(minRank, player.rank),
@@ -788,8 +785,6 @@ export const getWinner2 = async (
         }
       })
 
-    console.log(highestRankWinners)
-
     return highestRankWinners
   } catch {
     return null
@@ -801,8 +796,6 @@ export const getHighlightCardsForPlayer = (
   playerCards: CustomCard[]
 ): HighlightCard => {
   const bestHand = getBestHand([...boardCards, ...playerCards])
-
-  console.log(bestHand)
 
   bestHand.cards = bestHand.cards.filter(item => item !== undefined)
 

@@ -446,7 +446,11 @@ const init = ({ socket, io }: IInIt) => {
           formattedParticipantCards
         )
 
-        io.to(socketId).emit(PokerActions.HIGHLIGHT_CARDS, cards, !!currentMatch?.isAllAllIn)
+        io.to(socketId).emit(
+          PokerActions.HIGHLIGHT_CARDS,
+          cards,
+          !!currentMatch?.isAllAllIn
+        )
       }
 
       // end match
