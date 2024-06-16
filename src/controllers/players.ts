@@ -53,6 +53,46 @@ const removePlayer = async (req: Request, res: Response) => {
       return responseHandler.badrequest(res, 'Table not found')
     }
 
+    // remove player with socketId is expired
+    let playerRemovedBeforeCount = 0
+
+    for (const item of tableExisting.players) {
+      const playerId = item.id
+
+      const isPlayerConnected = req.app
+        .get('io')
+        .sockets.sockets.has(item.socketId)
+
+      if (!isPlayerConnected) {
+        await db.user.update({
+          where: {
+            id: item.userId,
+          },
+          data: {
+            chipsAmount: {
+              increment: item.stack,
+            },
+          },
+        })
+
+        const player = await db.player.delete({
+          where: {
+            id: playerId,
+            tableId: tableId as string,
+          },
+          include: {
+            user: true,
+          },
+        })
+
+        playerRemovedBeforeCount++
+
+        res?.app
+          .get('io')
+          .emit(PokerActions.LEAVE_TABLE, { tableId, playerId: player.id })
+      }
+    }
+
     const playerExisting = tableExisting.players.find(
       player => player.id === id
     )
@@ -86,7 +126,7 @@ const removePlayer = async (req: Request, res: Response) => {
       player => player.id !== id
     )
 
-    if (updatedPlayers.length === 1) {
+    if (Math.max(updatedPlayers.length - playerRemovedBeforeCount, 1) === 1) {
       await db.table.update({
         where: {
           id: tableId as string,
@@ -151,6 +191,57 @@ const createPlayer = async (req: Request, res: Response) => {
 
     if (!existingTable || existingTable.players.length >= 10) {
       return responseHandler.badrequest(res, 'Table is full')
+    }
+
+    // remove player with socketId is expired
+    for (const item of existingTable.players) {
+      const playerId = item.id
+
+      const isPlayerConnected = req.app
+        .get('io')
+        .sockets.sockets.has(item.socketId)
+
+      if (!isPlayerConnected) {
+        await db.user.update({
+          where: {
+            id: item.userId,
+          },
+          data: {
+            chipsAmount: {
+              increment: item.stack,
+            },
+          },
+        })
+
+        const player = await db.player.delete({
+          where: {
+            id: playerId,
+            tableId: tableId as string,
+          },
+          include: {
+            user: true,
+          },
+        })
+
+        const updatedPlayers = existingTable.players.filter(
+          player => player.id !== playerId
+        )
+
+        if (updatedPlayers.length === 1) {
+          await db.table.update({
+            where: {
+              id: tableId as string,
+            },
+            data: {
+              handOver: true,
+            },
+          })
+        }
+
+        res?.app
+          .get('io')
+          .emit(PokerActions.LEAVE_TABLE, { tableId, playerId: player.id })
+      }
     }
 
     const isExistingPlayer = await db.player.findFirst({
