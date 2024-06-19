@@ -60,7 +60,7 @@ const init = ({ socket, io }: IInIt) => {
       broadcastToTable(table, `${player.user?.name} joined`)
 
       if (table.handOver && table.players.length === 2) {
-        await initNewMatch(tableId, 3000)
+        await initNewMatch(tableId, 5000)
       }
     }
   )
@@ -281,6 +281,17 @@ const init = ({ socket, io }: IInIt) => {
     let elapsed = 0
     const interval = setInterval(async () => {
       elapsed += 1000
+
+      if (elapsed === delay - 3000) {
+        for (let i = 0; i < table.players.length; i++) {
+          let socketId = table.players[i].socketId as string
+          io.to(socketId).emit(PokerActions.NEXT_MATCH_IS_COMING, {
+            tableId,
+            isComing: true,
+          })
+        }
+      }
+
       if (elapsed >= (delay || 10000)) {
         clearInterval(interval)
 
@@ -290,6 +301,13 @@ const init = ({ socket, io }: IInIt) => {
         const { match, playerId, table: newTable } = await createMatch(tableId)
 
         if (!match || !playerId || !newTable) {
+          for (let i = 0; i < (newTable || table).players.length; i++) {
+            let socketId = (newTable || table).players[i].socketId as string
+            io.to(socketId).emit(PokerActions.NEXT_MATCH_IS_COMING, {
+              tableId,
+              isComing: false,
+            })
+          }
           // broadcastToTable(table, ' Match and playerId is null ');
           return
         }

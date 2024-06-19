@@ -125,6 +125,13 @@ export interface ServerToClientEvents {
     tableId: string
     playerId: string
   }) => void
+  [PokerActions.NEXT_MATCH_IS_COMING]: ({
+    tableId,
+    isComing,
+  }: {
+    tableId: string
+    isComing: boolean
+  }) => void
 }
 
 export interface ClientToServerEvents {
