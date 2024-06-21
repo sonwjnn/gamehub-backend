@@ -31,6 +31,15 @@ export type HighlightCard = {
   name: string
 }
 
+export type PlayerHighlightCards = {
+  [key: string]: HighlightCard
+}
+
+export type HighlightResponse = {
+  playerHighlightSet: PlayerHighlightCards
+  isAllAllIn: boolean
+}
+
 export interface ServerToClientEvents {
   noArg: () => void
   basicEmit: (a: number, b: string, c: Buffer) => void
@@ -73,10 +82,7 @@ export interface ServerToClientEvents {
   }) => void
 
   [PokerActions.UPDATE_STATISTICAL]: (data: Statistical) => void
-  [PokerActions.HIGHLIGHT_CARDS]: (
-    data: HighlightCard,
-    isAllAllIn: boolean
-  ) => void
+  [PokerActions.HIGHLIGHT_CARDS]: (encodingData: string) => void
   [PokerActions.MATCH_STARTED]: ({
     tableId,
     match,
@@ -90,9 +96,11 @@ export interface ServerToClientEvents {
   [PokerActions.PLAYERS_UPDATED]: ({
     tableId,
     players,
+    match,
   }: {
     tableId: string
     players: PlayerWithUser[]
+    match?: Match | null
   }) => void
 
   [PokerActions.PARTICIPANTS_UPDATED]: ({

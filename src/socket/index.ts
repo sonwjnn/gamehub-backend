@@ -8,7 +8,9 @@ import { Socket } from 'socket.io'
 import { db } from '../lib/db'
 import {
   ClientToServerEvents,
+  HighlightResponse,
   InterServerEvents,
+  PlayerHighlightCards,
   PlayerWithUser,
   ServerToClientEvents,
   SocketData,
@@ -21,7 +23,11 @@ import { PokerActions } from '../pokergame/actions'
 import { changeTurn, getTableById } from '../db/tables'
 import { createMatch } from '../db/matches'
 import { removePlayerBySocketId } from '../db/players'
-import { formattedCards, getHighlightCardsForPlayer } from '../db/poker'
+import {
+  CustomCard,
+  formattedCards,
+  getHighlightCardsForPlayer,
+} from '../db/poker'
 import { Mutex } from 'async-mutex'
 
 interface IInIt {
@@ -414,6 +420,7 @@ const init = ({ socket, io }: IInIt) => {
           players: newPlayers.map(item => {
             return { ...item, isTurn: false }
           }),
+          match: currentMatch,
         })
       }
 
@@ -444,30 +451,44 @@ const init = ({ socket, io }: IInIt) => {
 
       const formattedBoard = boardCards.map(card => formattedCards(card))
 
+      const availableParticipants = currentMatch?.participants?.filter(
+        participant =>
+          !!participant && !!participant.cardOne && !!participant.cardTwo
+      )
+
+      const playerHighlightSet =
+        availableParticipants?.reduce<PlayerHighlightCards>(
+          (previous, current) => {
+            const formattedParticipantCards = [
+              formattedCards(current.cardOne as CustomCard),
+              formattedCards(current.cardTwo as CustomCard),
+            ]
+            const highlightCards = getHighlightCardsForPlayer(
+              formattedBoard,
+              formattedParticipantCards
+            )
+            Object.assign(previous, {
+              [current.playerId]: highlightCards,
+            })
+            return previous
+          },
+          {}
+        ) || {}
+
+      const highlightResponse: HighlightResponse = {
+        playerHighlightSet,
+        isAllAllIn: !!currentMatch?.isAllAllIn,
+      }
+
+      const highlightResponseEncoding = Buffer.from(
+        JSON.stringify(highlightResponse)
+      ).toString('base64')
+
       for (let i = 0; i < newPlayers.length; i++) {
         let socketId = newPlayers[i].socketId as string
-
-        const participant = currentMatch?.participants.find(
-          participant => participant.playerId === newPlayers[i].id
-        )
-
-        if (!participant || !participant.cardOne || !participant.cardTwo)
-          continue
-
-        const formattedParticipantCards = [
-          formattedCards(participant.cardOne),
-          formattedCards(participant.cardTwo),
-        ]
-
-        const cards = getHighlightCardsForPlayer(
-          formattedBoard,
-          formattedParticipantCards
-        )
-
         io.to(socketId).emit(
           PokerActions.HIGHLIGHT_CARDS,
-          cards,
-          !!currentMatch?.isAllAllIn
+          highlightResponseEncoding
         )
       }
 

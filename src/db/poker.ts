@@ -14,7 +14,7 @@ interface Hand {
   cards: CustomCard[]
 }
 
-interface CustomCard {
+export interface CustomCard {
   id: string
   rank: string
   suit: string
