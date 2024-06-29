@@ -220,6 +220,13 @@ export interface ClientToServerEvents {
     tableId: string
     playerId: string
   }) => void
+  [PokerActions.LEAVE_NEXT_MATCH]: ({
+    tableId,
+    playerId,
+  }: {
+    tableId: string
+    playerId: string
+  }) => void
 }
 
 export interface InterServerEvents {

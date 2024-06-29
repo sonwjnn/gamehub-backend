@@ -81,7 +81,7 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!currentPlayer) return null
 
-    broadcastToTable(table, `${currentPlayer.user?.name} left`, 'info')
+    broadcastToTable(table, `${currentPlayer.user?.name} left`, 'error')
 
     if (table?.players.length === 1) {
       clearForOnePlayer(table)
@@ -210,6 +210,22 @@ const init = ({ socket, io }: IInIt) => {
     }
   })
 
+  socket.on(PokerActions.LEAVE_NEXT_MATCH, async ({ tableId, playerId }) => {
+    const table = await getTableById(tableId)
+
+    if (!table) return
+
+    const player = table.players.find(p => p.id === playerId)
+
+    if (!player) return
+
+    broadcastToTable(
+      table,
+      `${player.user.name} 가 다음 경기에서 나갑니다.`,
+      'error'
+    )
+  })
+
   socket.on('disconnect', async () => {
     const player = await removePlayerBySocketId(socket.id)
 
@@ -217,7 +233,7 @@ const init = ({ socket, io }: IInIt) => {
 
     const table = player.table
 
-    broadcastToTable(table, `${player.user?.name} left`, 'info')
+    broadcastToTable(table, `${player.user?.name} left`, 'error')
 
     for (let i = 0; i < table.players.length; i++) {
       let socketId = table.players[i].socketId as string
