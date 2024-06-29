@@ -63,7 +63,7 @@ const init = ({ socket, io }: IInIt) => {
         return
       }
 
-      broadcastToTable(table, `${player.user?.name} joined`)
+      broadcastToTable(table, `${player.user?.name} joined`, 'info')
 
       if (table.handOver && table.players.length === 2) {
         await initNewMatch(tableId, 5000)
@@ -81,7 +81,7 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!currentPlayer) return null
 
-    broadcastToTable(table, `${currentPlayer.user?.name} left`)
+    broadcastToTable(table, `${currentPlayer.user?.name} left`, 'info')
 
     if (table?.players.length === 1) {
       clearForOnePlayer(table)
@@ -105,7 +105,8 @@ const init = ({ socket, io }: IInIt) => {
 
       broadcastToTable(
         table,
-        `${player.user?.name} is rebought $${player.stack}`
+        `${player.user?.name} is rebought $${player.stack}`,
+        'info'
       )
     }
   )
@@ -119,7 +120,7 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!participant) return
 
-    broadcastToTable(table, `player ${participant.player.user.username} folded`)
+    // broadcastToTable(table, `player ${participant.player.user.username} folded`)
 
     changeTurnAndBroadcast(table, participant)
   })
@@ -133,10 +134,10 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!participant) return
 
-    broadcastToTable(
-      table,
-      `player ${participant.player.user.username} checked`
-    )
+    // broadcastToTable(
+    //   table,
+    //   `player ${participant.player.user.username} checked`
+    // )
 
     changeTurnAndBroadcast(table, participant)
   })
@@ -156,10 +157,10 @@ const init = ({ socket, io }: IInIt) => {
 
       if (!participant) return
 
-      broadcastToTable(
-        table,
-        `player ${participant.player.user.username} raises to $${amount.toFixed(2)}`
-      )
+      // broadcastToTable(
+      //   table,
+      //   `player ${participant.player.user.username} raises to $${amount.toFixed(2)}`
+      // )
 
       changeTurnAndBroadcast(table, participant)
     }
@@ -184,7 +185,7 @@ const init = ({ socket, io }: IInIt) => {
       })
     }
 
-    broadcastToTable(table, `player ${participant.player.user.username} called`)
+    // broadcastToTable(table, `player ${participant.player.user.username} called`)
 
     changeTurnAndBroadcast(table, participant)
   })
@@ -216,7 +217,7 @@ const init = ({ socket, io }: IInIt) => {
 
     const table = player.table
 
-    broadcastToTable(table, `${player.user?.name} left`)
+    broadcastToTable(table, `${player.user?.name} left`, 'info')
 
     for (let i = 0; i < table.players.length; i++) {
       let socketId = table.players[i].socketId as string
@@ -228,60 +229,13 @@ const init = ({ socket, io }: IInIt) => {
     }
   })
 
-  const clearPlayerLeaveChecked = async (table: TableWithPlayers) => {
-    try {
-      const players = table.players.filter(p => p.leaveNextMatch)
-
-      if (!players) return table
-
-      for (const player of players) {
-        await db.user.update({
-          where: {
-            id: player.userId,
-          },
-          data: {
-            chipsAmount: {
-              increment: player.stack,
-            },
-          },
-        })
-      }
-
-      await db.player.deleteMany({
-        where: {
-          tableId: table.id,
-          leaveNextMatch: true,
-        },
-      })
-
-      const updatedTable = await getTableById(table.id)
-
-      if (!updatedTable) return null
-
-      broadcastToTable(updatedTable, '')
-
-      for (let i = 0; i < updatedTable.players.length; i++) {
-        let socketId = updatedTable.players[i].socketId as string
-
-        io.to(socketId).emit(PokerActions.PLAYERS_UPDATED, {
-          tableId: updatedTable.id,
-          players: updatedTable.players,
-        })
-      }
-
-      return updatedTable
-    } catch {
-      return null
-    }
-  }
-
   const initNewMatch = async (tableId: string, delay: number) => {
     const table = await getTableById(tableId)
 
     if (!table) return null
 
     if (table.players.length > 1) {
-      broadcastToTable(table, 'New match starting in 8 seconds')
+      // broadcastToTable(table, 'New match starting in 8 seconds')
     }
 
     let elapsed = 0
@@ -318,7 +272,7 @@ const init = ({ socket, io }: IInIt) => {
           return
         }
 
-        broadcastToTable(newTable, ' New match started ')
+        broadcastToTable(newTable, ' New match started ', 'success')
 
         for (let i = 0; i < newTable.players.length; i++) {
           let socketId = newTable.players[i].socketId as string
@@ -350,14 +304,13 @@ const init = ({ socket, io }: IInIt) => {
   const broadcastToTable = (
     table: TableWithPlayers,
     message: string,
-    from = null
+    type?: 'error' | 'info' | 'success' | 'warning'
   ) => {
     for (let i = 0; i < table.players.length; i++) {
       let socketId = table.players[i].socketId as string
-      // let tableCopy = hideOpponentCards(table, socketId)
       io.to(socketId).emit(PokerActions.TABLE_MESSAGE, {
         message,
-        from,
+        type,
       })
     }
   }
@@ -366,7 +319,7 @@ const init = ({ socket, io }: IInIt) => {
     // table.clearWinMessages()
     setTimeout(() => {
       // table.resetBoardAndPot()
-      broadcastToTable(table, 'Waiting for more players')
+      broadcastToTable(table, 'Waiting for more players', 'warning')
     }, 5000)
   }
 

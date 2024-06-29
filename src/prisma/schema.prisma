@@ -60,7 +60,7 @@ model Table {
 
   handOver   Boolean @default(true) @map(name: "hand_over")
   deleted    Boolean @default(false) @map(name: "on_deleted")
-  chatBanned Boolean @default(false) @map(name: "chat_banned")
+  chatBanned Boolean @default(true) @map(name: "chat_banned")
 
   players  Player[]
   messages Message[]

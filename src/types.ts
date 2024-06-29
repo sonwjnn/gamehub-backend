@@ -75,10 +75,10 @@ export interface ServerToClientEvents {
   }) => void
   [PokerActions.TABLE_MESSAGE]: ({
     message,
-    from,
+    type,
   }: {
     message: string
-    from: any
+    type?: 'error' | 'info' | 'success' | 'warning'
   }) => void
 
   [PokerActions.UPDATE_STATISTICAL]: (data: Statistical) => void
