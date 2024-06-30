@@ -14,8 +14,6 @@ const test = () => {
   const player2Cards = ['9D', 'TD'] as [PlayingCard, PlayingCard]
 
   const result = rankHands(gameType, board, [player1Cards, player2Cards])
-
-  console.log(result)
 }
 
 test()

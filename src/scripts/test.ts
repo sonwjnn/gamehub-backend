@@ -22,7 +22,6 @@ const playerCards = [
 
 const test = () => {
   const cards = getHighlightCardsForPlayer(boardCards, playerCards)
-  console.log(cards)
 }
 
 test()

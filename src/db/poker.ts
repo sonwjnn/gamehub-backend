@@ -504,7 +504,6 @@ const hasStraight = (cards: CustomCard[]): Hand => {
 
     if (currentRank === tempRank + 1) {
       temp.push(sortedCards[i])
-      console.log(temp)
       if (temp.length === 5) {
         straights.push([...temp])
         temp.shift()

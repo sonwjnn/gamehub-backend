@@ -225,7 +225,7 @@ const isActionComplete = async (matchId: string) => {
   }
 }
 
-const isAllCheckedOrCalled = async (currentMatch: Match) => {
+const isAllCheckedOrCalled = async (currentMatch: Match, ante: number) => {
   try {
     const currentPariticipants = await db.participant.findMany({
       where: {
@@ -241,11 +241,26 @@ const isAllCheckedOrCalled = async (currentMatch: Match) => {
       },
     })
 
+    // handle bigblind missing turn
+    const bigBlindParticipant = currentPariticipants.find(
+      participant => participant.playerId === currentMatch.bigBlindId
+    )
+
+    const isPreFlop = currentMatch.isPreFlop && !currentMatch.isFlop
+
+    const isBigBlindTurn =
+      bigBlindParticipant?.bet === currentMatch.minBet * 2 &&
+      !bigBlindParticipant.isChecked &&
+      isPreFlop
+
+    if (bigBlindParticipant && isBigBlindTurn) {
+      return false
+    }
+
+    // default case
     const newCurrentParticipants = currentPariticipants.filter(
       participant => participant.player.stack > 0
     )
-
-    // if (newCurrentParticipants.length === 0) return true
 
     return newCurrentParticipants.every(participant => {
       const betMatchesCallAmount =
@@ -736,7 +751,7 @@ export const changeTurn = async (
       return ''
     }
 
-    const isComplete = await isAllCheckedOrCalled(currentMatch)
+    const isComplete = await isAllCheckedOrCalled(currentMatch, table.ante)
 
     if (isComplete) {
       await calculateSidePots(participant.matchId)
