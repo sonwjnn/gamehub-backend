@@ -8,6 +8,7 @@ import { Socket } from 'socket.io'
 import { db } from '../lib/db'
 import {
   ClientToServerEvents,
+  CustomToastType,
   HighlightResponse,
   InterServerEvents,
   PlayerHighlightCards,
@@ -320,7 +321,7 @@ const init = ({ socket, io }: IInIt) => {
   const broadcastToTable = (
     table: TableWithPlayers,
     message: string,
-    type?: 'error' | 'info' | 'success' | 'warning'
+    type?: CustomToastType
   ) => {
     for (let i = 0; i < table.players.length; i++) {
       let socketId = table.players[i].socketId as string

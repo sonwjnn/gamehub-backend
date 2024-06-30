@@ -78,7 +78,7 @@ export interface ServerToClientEvents {
     type,
   }: {
     message: string
-    type?: 'error' | 'info' | 'success' | 'warning'
+    type?: CustomToastType
   }) => void
 
   [PokerActions.UPDATE_STATISTICAL]: (data: Statistical) => void
@@ -259,3 +259,5 @@ export type ParticipantWithPlayerAndCards = ParticipantWithCards & {
 export type PlayerWithParticipants = Player & {
   participants: Participant[]
 }
+
+export type CustomToastType = 'error' | 'info' | 'success' | 'warning'
