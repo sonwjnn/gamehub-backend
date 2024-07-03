@@ -24,7 +24,7 @@ export const getParticipantById = async (id: string) => {
   }
 }
 
-export const handlePacticipantFold = async (id: string) => {
+export const handleParticipantFold = async (id: string) => {
   try {
     const participant = await db.participant.update({
       where: {
@@ -78,7 +78,7 @@ const raise = async (
       },
     })
 
-    await db.player.update({
+    const updatedPlayer = await db.player.update({
       where: {
         id: currentParticipant.playerId,
       },
@@ -90,13 +90,13 @@ const raise = async (
       },
     })
 
-    return participant
+    return { participant, updatedPlayer }
   } catch {
     return null
   }
 }
 
-export const handlePacticipantRaise = async (
+export const handleParticipantRaise = async (
   id: string,
   amount: number,
   type: RaiseType
@@ -122,11 +122,11 @@ export const handlePacticipantRaise = async (
 
     let addedToPot = amount - currentParticipant.bet
 
-    const updatedCurrentParticipant = await raise(
-      currentParticipant,
-      amount,
-      type
-    )
+    const data = await raise(currentParticipant, amount, type)
+
+    if (!data) return null
+
+    const { participant, updatedPlayer } = data
 
     const updatedMinRaise = currentMatch.callAmount
       ? currentMatch.callAmount +
@@ -146,7 +146,7 @@ export const handlePacticipantRaise = async (
       },
     })
 
-    return updatedCurrentParticipant
+    return { participant, updatedPlayer }
   } catch (error) {
     console.log(error)
     return null
@@ -181,7 +181,7 @@ const callRaise = async (
       },
     })
 
-    await db.player.update({
+    const updatedPlayer = await db.player.update({
       where: {
         id: currentParticipant.playerId,
       },
@@ -193,13 +193,13 @@ const callRaise = async (
       },
     })
 
-    return participant
+    return { participant, updatedPlayer }
   } catch (error) {
     return null
   }
 }
 
-export const handlePacticipantCall = async (id: string) => {
+export const handleParticipantCall = async (id: string) => {
   try {
     const currentParticipant = await db.participant.findUnique({
       where: {
@@ -230,10 +230,11 @@ export const handlePacticipantCall = async (id: string) => {
         ? stack
         : currentMatch.callAmount - currentParticipant.bet
 
-    const updatedCurrentParticipant = await callRaise(
-      currentParticipant,
-      currentMatch.callAmount
-    )
+    const data = await callRaise(currentParticipant, currentMatch.callAmount)
+
+    if (!data) return null
+
+    const { participant, updatedPlayer } = data
 
     if (currentMatch.sidePots.length > 0) {
       const lastSidePot =
@@ -270,13 +271,13 @@ export const handlePacticipantCall = async (id: string) => {
       })
     }
 
-    return updatedCurrentParticipant
+    return { participant, updatedPlayer }
   } catch (error) {
     return null
   }
 }
 
-export const handlePacticipantCheck = async (id: string) => {
+export const handleParticipantCheck = async (id: string) => {
   try {
     const participant = await db.participant.update({
       where: {

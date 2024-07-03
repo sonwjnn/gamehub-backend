@@ -1,8 +1,8 @@
 import {
-  handlePacticipantCall,
-  handlePacticipantCheck,
-  handlePacticipantFold,
-  handlePacticipantRaise,
+  handleParticipantCall,
+  handleParticipantCheck,
+  handleParticipantFold,
+  handleParticipantRaise,
 } from './../db/participants'
 import { Socket } from 'socket.io'
 import { db } from '../lib/db'
@@ -118,7 +118,7 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!table) return
 
-    const participant = await handlePacticipantFold(participantId)
+    const participant = await handleParticipantFold(participantId)
 
     if (!participant) return
 
@@ -132,7 +132,7 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!table) return
 
-    const participant = await handlePacticipantCheck(participantId)
+    const participant = await handleParticipantCheck(participantId)
 
     if (!participant) return
 
@@ -151,13 +151,11 @@ const init = ({ socket, io }: IInIt) => {
 
       if (!table) return
 
-      const participant = await handlePacticipantRaise(
-        participantId,
-        amount,
-        type
-      )
+      const data = await handleParticipantRaise(participantId, amount, type)
 
-      if (!participant) return
+      if (!data) return
+
+      const { participant, updatedPlayer } = data
 
       const players = table.players
 
@@ -166,6 +164,14 @@ const init = ({ socket, io }: IInIt) => {
         io.to(socketId).emit(PokerActions.PARTICIPANTS_UPDATED, {
           tableId,
           participant,
+        })
+      }
+
+      for (let i = 0; i < players.length; i++) {
+        let socketId = players[i].socketId as string
+        io.to(socketId).emit(PokerActions.UPDATE_MISSING_PLAYER_STACK, {
+          tableId,
+          player: updatedPlayer,
         })
       }
 
@@ -183,9 +189,11 @@ const init = ({ socket, io }: IInIt) => {
 
     if (!table) return
 
-    const participant = await handlePacticipantCall(participantId)
+    const data = await handleParticipantCall(participantId)
 
-    if (!participant) return
+    if (!data) return
+
+    const { participant, updatedPlayer } = data
 
     const players = table.players
 
@@ -194,6 +202,16 @@ const init = ({ socket, io }: IInIt) => {
       io.to(socketId).emit(PokerActions.PARTICIPANTS_UPDATED, {
         tableId,
         participant,
+      })
+    }
+
+    console.log('players: ', players)
+
+    for (let i = 0; i < players.length; i++) {
+      let socketId = players[i].socketId as string
+      io.to(socketId).emit(PokerActions.UPDATE_MISSING_PLAYER_STACK, {
+        tableId,
+        player: updatedPlayer,
       })
     }
 

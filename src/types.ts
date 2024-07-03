@@ -103,6 +103,14 @@ export interface ServerToClientEvents {
     match?: Match | null
   }) => void
 
+  [PokerActions.UPDATE_MISSING_PLAYER_STACK]: ({
+    tableId,
+    player,
+  }: {
+    tableId: string
+    player: Player
+  }) => void
+
   [PokerActions.PARTICIPANTS_UPDATED]: ({
     tableId,
     participant,
