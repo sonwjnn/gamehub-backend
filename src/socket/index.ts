@@ -205,8 +205,6 @@ const init = ({ socket, io }: IInIt) => {
       })
     }
 
-    console.log('players: ', players)
-
     for (let i = 0; i < players.length; i++) {
       let socketId = players[i].socketId as string
       io.to(socketId).emit(PokerActions.UPDATE_MISSING_PLAYER_STACK, {
