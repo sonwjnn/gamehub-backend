@@ -209,16 +209,24 @@ const isActionComplete = async (matchId: string) => {
       },
     })
 
-    const newCurrentParticipants = currentPariticipants.filter(
+    const filteredParticipants = currentPariticipants.filter(
       participant => participant.player.stack > 0
     )
 
-    if (newCurrentParticipants.length === 0) return true
+    if (filteredParticipants.length === 0) {
+      return true
+    }
 
-    return (
-      newCurrentParticipants.length === 1 &&
-      newCurrentParticipants[0].lastAction === 'CALL'
+    const isAnyPlayerAllIn = currentPariticipants.some(
+      participant => participant.lastAction === 'ALLIN'
     )
+
+    const result =
+      !isAnyPlayerAllIn &&
+      filteredParticipants.length === 1 &&
+      filteredParticipants[0].lastAction === 'CALL'
+
+    return result
   } catch {
     // throw new Error('Internal Error')
     return null

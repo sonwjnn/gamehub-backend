@@ -803,7 +803,7 @@ export const getHighlightCardsForPlayer = (
     const trueName = formatRankToGetHighlightName(
       bestHand.cards[lastIndex].rank
     )
-    return { cards: [], name: `${trueName} High` }
+    return { cards: [], name: `${trueName} 탑` }
   }
 
   if (bestHand.name === '1 Pair') {
@@ -824,7 +824,7 @@ export const getHighlightCardsForPlayer = (
         const trueName = formatRankToGetHighlightName(cards[0].rank)
         const dataReturn = {
           cards: cards.map(card => unformatCards(card)),
-          name: `1 Pair ${trueName}`,
+          name: `원페어 ${trueName}`,
         }
         return dataReturn
       }
@@ -852,7 +852,7 @@ export const getHighlightCardsForPlayer = (
 
     const dataReturn = {
       cards: pairs,
-      name: bestHand.name,
+      name: '투페어',
     }
     return dataReturn
   }
@@ -874,7 +874,7 @@ export const getHighlightCardsForPlayer = (
         const trueName = formatRankToGetHighlightName(cards[0].rank)
         const dataReturn = {
           cards: cards.map(card => unformatCards(card)),
-          name: `Three of a kind ${trueName}`,
+          name: `트리플 ${trueName}`,
         }
         return dataReturn
       }
@@ -898,16 +898,24 @@ export const getHighlightCardsForPlayer = (
         const trueName = formatRankToGetHighlightName(cards[0].rank)
         const dataReturn = {
           cards: cards.map(card => unformatCards(card)),
-          name: `Four of a kind ${trueName}`,
+          name: `포카드 ${trueName}`,
         }
         return dataReturn
       }
     }
   }
 
+  const otherFormattedName: { [key: string]: string } = {
+    Straight: '스트레이트',
+    Flush: '플러쉬',
+    'Full House': '풀하우스',
+    'Straight Flush': '스트레이트 플러쉬',
+    'Royal Flush': '로얄 스트레이트 플러쉬',
+  }
+
   return {
     cards: bestHand.cards.map(card => unformatCards(card)),
-    name: bestHand.name,
+    name: otherFormattedName[bestHand.name] || bestHand.name,
   }
 
   // Logic to check the combination of cards for a specific player
