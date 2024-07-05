@@ -193,11 +193,11 @@ const endHand = async (tableId: string) => {
   }
 }
 
-const isActionComplete = async (matchId: string) => {
+const isActionComplete = async (match: Match) => {
   try {
     const currentPariticipants = await db.participant.findMany({
       where: {
-        matchId: matchId,
+        matchId: match.id,
         isFolded: false,
       },
       include: {
@@ -217,6 +217,27 @@ const isActionComplete = async (matchId: string) => {
       return true
     }
 
+    // handle case 2 players left and bigblind all in pre-flop
+    const isPreFlop = match.isPreFlop && !match.isFlop
+    const bigblind = currentPariticipants.find(
+      participant => participant.playerId === match.bigBlindId
+    )
+    const smallblind = currentPariticipants.find(
+      participant => participant.playerId === match.smallBlindId
+    )
+
+    const isBBAllInPreFlop =
+      bigblind && bigblind.player.stack === 0 && isPreFlop
+
+    if (currentPariticipants.length === 2 && isBBAllInPreFlop) {
+      const isCallAllin = bigblind?.bet === smallblind?.bet
+
+      if (!isCallAllin) {
+        return false
+      }
+    }
+
+    // default case
     const result =
       filteredParticipants.length === 1 &&
       filteredParticipants[0].lastAction === 'CALL'
@@ -228,7 +249,7 @@ const isActionComplete = async (matchId: string) => {
   }
 }
 
-const isAllCheckedOrCalled = async (currentMatch: Match, ante: number) => {
+const isAllCheckedOrCalled = async (currentMatch: Match) => {
   try {
     const currentPariticipants = await db.participant.findMany({
       where: {
@@ -719,7 +740,7 @@ export const changeTurn = async (
       return ''
     }
 
-    const isActionIsComplete = await isActionComplete(participant.matchId)
+    const isActionIsComplete = await isActionComplete(currentMatch)
 
     if (isActionIsComplete) {
       let roundNameBeforeComplete = currentMatch?.isRiver
@@ -754,7 +775,7 @@ export const changeTurn = async (
       return ''
     }
 
-    const isComplete = await isAllCheckedOrCalled(currentMatch, table.ante)
+    const isComplete = await isAllCheckedOrCalled(currentMatch)
 
     if (isComplete) {
       await calculateSidePots(participant.matchId)

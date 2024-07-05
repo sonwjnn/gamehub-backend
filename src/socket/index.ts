@@ -67,7 +67,7 @@ const init = ({ socket, io }: IInIt) => {
       broadcastToTable(table, `${player.user?.name} joined`, 'info')
 
       if (table.handOver && table.players.length === 2) {
-        await initNewMatch(tableId, 5000)
+        await startNewMatch(tableId, 5000)
       }
     }
   )
@@ -86,6 +86,7 @@ const init = ({ socket, io }: IInIt) => {
     broadcastToTable(table, `${currentPlayer.user?.name} left`, 'error')
 
     if (table?.players.length === 1) {
+      clearMatchInterval()
       clearForOnePlayer(table)
     }
   })
@@ -273,7 +274,11 @@ const init = ({ socket, io }: IInIt) => {
     }
   })
 
+  let intervalId: NodeJS.Timeout | null = null
+
   const initNewMatch = async (tableId: string, delay: number) => {
+    if (intervalId) return
+
     const table = await getTableById(tableId)
 
     if (!table) return null
@@ -283,7 +288,7 @@ const init = ({ socket, io }: IInIt) => {
     }
 
     let elapsed = 0
-    const interval = setInterval(async () => {
+    intervalId = setInterval(async () => {
       elapsed += 1000
 
       if (elapsed === delay - 3000) {
@@ -296,8 +301,8 @@ const init = ({ socket, io }: IInIt) => {
         }
       }
 
-      if (elapsed >= (delay || 10000)) {
-        clearInterval(interval)
+      if (elapsed === (delay || 10000)) {
+        clearInterval(intervalId as NodeJS.Timeout)
 
         // table.clearWinMessages();
         // broadcastToTable(table, ' Before call api create match ');
@@ -343,6 +348,18 @@ const init = ({ socket, io }: IInIt) => {
         }
       }
     }, 1000)
+  }
+
+  const startNewMatch = async (tableId: string, delay: number) => {
+    clearMatchInterval()
+    await initNewMatch(tableId, delay)
+  }
+
+  const clearMatchInterval = () => {
+    if (intervalId) {
+      clearInterval(intervalId as NodeJS.Timeout)
+      intervalId = null
+    }
   }
 
   const broadcastToTable = (
@@ -513,7 +530,9 @@ const init = ({ socket, io }: IInIt) => {
             completeDelay) ||
           DELAY_BETWEEN_MATCHES
 
-        await initNewMatch(currentMatch?.table.id, delay)
+        if (newPlayers.length >= 2) {
+          await startNewMatch(currentMatch?.table.id, delay)
+        }
       }
     },
     updateStatistical = async (players: PlayerWithUser[]) => {
