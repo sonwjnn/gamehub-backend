@@ -217,12 +217,7 @@ const isActionComplete = async (matchId: string) => {
       return true
     }
 
-    const isAnyPlayerAllIn = currentPariticipants.some(
-      participant => participant.lastAction === 'ALLIN'
-    )
-
     const result =
-      !isAnyPlayerAllIn &&
       filteredParticipants.length === 1 &&
       filteredParticipants[0].lastAction === 'CALL'
 
