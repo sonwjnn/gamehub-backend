@@ -237,6 +237,13 @@ const isActionComplete = async (match: Match) => {
       }
     }
 
+    if (
+      filteredParticipants.length === 1 &&
+      filteredParticipants[0].lastAction === 'RAISE'
+    ) {
+      return true
+    }
+
     // default case
     const result =
       filteredParticipants.length === 1 &&

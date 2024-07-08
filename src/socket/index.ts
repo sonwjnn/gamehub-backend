@@ -100,17 +100,15 @@ const init = ({ socket, io }: IInIt) => {
       tableId: string
       player: PlayerWithUser
     }) => {
-      const table = await getTableById(tableId)
-
-      if (!table) {
-        return
-      }
-
-      broadcastToTable(
-        table,
-        `${player.user?.name} is rebought $${player.stack}`,
-        'info'
-      )
+      // const table = await getTableById(tableId)
+      // if (!table) {
+      //   return
+      // }
+      // broadcastToTable(
+      //   table,
+      //   `${player.user?.name} is rebought $${player.stack}`,
+      //   'info'
+      // )
     }
   )
 
@@ -301,7 +299,7 @@ const init = ({ socket, io }: IInIt) => {
         }
       }
 
-      if (elapsed === (delay || 10000)) {
+      if (elapsed >= (delay || 10000)) {
         clearInterval(intervalId as NodeJS.Timeout)
 
         // table.clearWinMessages();
