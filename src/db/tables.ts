@@ -3,6 +3,7 @@ import { Match, Participant, Player, Prisma } from '@prisma/client'
 import {
   ParticipantWithPlayerAndCards,
   PlayerWithParticipants,
+  PlayerWithUser,
   TableWithPlayers,
 } from '../types'
 import { PokerActions } from '../pokergame/actions'
@@ -217,26 +218,6 @@ const isActionComplete = async (match: Match) => {
       return true
     }
 
-    // handle case 2 players left and bigblind all in pre-flop
-    const isPreFlop = match.isPreFlop && !match.isFlop
-    const bigblind = currentPariticipants.find(
-      participant => participant.playerId === match.bigBlindId
-    )
-    const smallblind = currentPariticipants.find(
-      participant => participant.playerId === match.smallBlindId
-    )
-
-    const isBBAllInPreFlop =
-      bigblind && bigblind.player.stack === 0 && isPreFlop
-
-    if (currentPariticipants.length === 2 && isBBAllInPreFlop) {
-      const isCallAllin = bigblind?.bet === smallblind?.bet
-
-      if (!isCallAllin) {
-        return false
-      }
-    }
-
     if (
       filteredParticipants.length === 1 &&
       (filteredParticipants[0].lastAction === 'RAISE' ||
@@ -247,10 +228,10 @@ const isActionComplete = async (match: Match) => {
       return true
     }
 
-    // default case
+    const participant = filteredParticipants[0]
+
     const result =
-      filteredParticipants.length === 1 &&
-      filteredParticipants[0].lastAction === 'CALL'
+      filteredParticipants.length === 1 && participant.lastAction === 'CALL'
 
     return result
   } catch {
@@ -612,7 +593,12 @@ const findNextUnfoldedPlayer = (
   let current = players.findIndex(player => player.id === playerId)
 
   while (i < places) {
-    current = current === players.length - 1 ? 0 : current + 1
+    if (current === players.length - 1) {
+      current = 0
+    } else {
+      current++
+    }
+
     let hand = players[current].participants[0]
     const stack = players[current].stack
 
@@ -695,6 +681,35 @@ export const placeBlinds = async (
   }
 }
 
+const resetActionIfAllin = async (
+  unfoldedParticipants: ParticipantWithPlayerAndCards[],
+  playerId: string
+) => {
+  const currentParticipant = unfoldedParticipants.find(
+    p => p.player.id === playerId
+  )
+  if (!currentParticipant) return null
+
+  if (currentParticipant.lastAction === 'ALLIN') {
+    await Promise.all(
+      unfoldedParticipants.map(
+        async (participant: ParticipantWithPlayerAndCards) => {
+          if (participant.lastAction === 'CALL') {
+            await db.participant.update({
+              where: {
+                id: participant.id,
+              },
+              data: {
+                lastAction: '',
+              },
+            })
+          }
+        }
+      )
+    )
+  }
+}
+
 export const changeTurn = async (
   table: TableWithPlayers,
   participant: Participant
@@ -749,6 +764,8 @@ export const changeTurn = async (
       await endWithoutShowdown(unfoldedParticipants[0])
       return ''
     }
+
+    await resetActionIfAllin(unfoldedParticipants, currentPlayer.id)
 
     const isActionIsComplete = await isActionComplete(currentMatch)
 
