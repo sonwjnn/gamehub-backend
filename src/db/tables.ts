@@ -239,7 +239,10 @@ const isActionComplete = async (match: Match) => {
 
     if (
       filteredParticipants.length === 1 &&
-      filteredParticipants[0].lastAction === 'RAISE'
+      (filteredParticipants[0].lastAction === 'RAISE' ||
+        filteredParticipants[0].lastAction === 'HALF' ||
+        filteredParticipants[0].lastAction === 'QUARTER' ||
+        filteredParticipants[0].lastAction === 'FULL')
     ) {
       return true
     }
