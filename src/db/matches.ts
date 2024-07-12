@@ -43,7 +43,7 @@ export const createMatch = async (tableId: string) => {
       return { match: null, playerId: null }
     }
 
-    if (table.players.length < 2) {
+    if (table.players.length < 2 || !table.handOver) {
       return { match: null, playerId: null }
     }
 

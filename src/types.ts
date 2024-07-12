@@ -235,6 +235,7 @@ export interface ClientToServerEvents {
     tableId: string
     playerId: string
   }) => void
+  [PokerActions.START_INIT_MATCH]: ({ tableId }: { tableId: string }) => void
 }
 
 export interface InterServerEvents {

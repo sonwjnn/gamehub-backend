@@ -66,11 +66,14 @@ const init = ({ socket, io }: IInIt) => {
 
       broadcastToTable(table, `${player.user?.name} joined`, 'info')
 
-      if (table.handOver && table.players.length === 2) {
-        await startNewMatch(tableId, 5000)
-      }
+      // if (table.handOver && table.players.length === 2) {
+      //   await startNewMatch(tableId, 5000)
+      // }
     }
   )
+  socket.on(PokerActions.START_INIT_MATCH, async ({ tableId }) => {
+    await startNewMatch(tableId, 5000)
+  })
 
   socket.on(PokerActions.TABLE_LEFT, async ({ tableId, playerId }) => {
     const table = await getTableById(tableId)
