@@ -694,10 +694,7 @@ const resetActionIfAllin = async (
     await Promise.all(
       unfoldedParticipants.map(
         async (participant: ParticipantWithPlayerAndCards) => {
-          if (
-            participant.lastAction !== 'CALL' &&
-            participant.lastAction !== 'FOLD'
-          ) {
+          if (participant.lastAction !== 'FOLD') {
             await db.participant.update({
               where: {
                 id: participant.id,
