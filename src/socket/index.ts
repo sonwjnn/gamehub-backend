@@ -263,7 +263,11 @@ const init = ({ socket, io }: IInIt) => {
 
     const table = player.table
 
-    broadcastToTable(table, `${player.user?.name} left`, 'error')
+    broadcastToTable(
+      table,
+      `${player.user?.name} left, socket id have lost`,
+      'error'
+    )
 
     for (let i = 0; i < table.players.length; i++) {
       let socketId = table.players[i].socketId as string
