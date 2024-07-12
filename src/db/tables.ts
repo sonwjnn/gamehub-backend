@@ -112,7 +112,6 @@ const endWithoutShowdown = async (winner: ParticipantWithPlayerAndCards) => {
         id: winner.id,
       },
       data: {
-        bet: 0,
         lastAction: PokerActions.WINNER,
       },
     })
