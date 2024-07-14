@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
-import { getTableById, getTables, updateTableById } from '../db/tables'
+import { getTableById } from '../db/tables'
 import { PokerActions } from '../pokergame/actions'
 
 const getAllTables = async (req: Request, res: Response) => {

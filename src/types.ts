@@ -196,6 +196,7 @@ export interface ClientToServerEvents {
     tableId: string
     participantId: string
   }) => void
+
   [PokerActions.CHECK]: ({
     tableId,
     participantId,

@@ -29,7 +29,6 @@ import {
   formattedCards,
   getHighlightCardsForPlayer,
 } from '../db/poker'
-import { Mutex } from 'async-mutex'
 
 interface IInIt {
   socket: Socket<
@@ -253,6 +252,43 @@ const init = ({ socket, io }: IInIt) => {
   })
 
   socket.on('disconnect', async () => {
+    const playerDisconnected = await db.player.findFirst({
+      where: {
+        socketId: socket.id,
+      },
+    })
+
+    if (!playerDisconnected) return
+
+    const table = await getTableById(playerDisconnected.tableId)
+
+    if (!table) return
+
+    const participant = await db.participant.findFirst({
+      where: {
+        playerId: playerDisconnected.id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+
+    if (!participant) {
+      await onRemovePlayerBySocketId()
+      return
+    }
+
+    if (playerDisconnected.isTurn && !participant.isFolded && !table.handOver) {
+      const participantData = await handleParticipantFold(participant.id)
+      if (!participantData) return
+
+      changeTurnAndBroadcast(table, participant)
+
+      await onRemovePlayerBySocketId()
+    }
+  })
+
+  const onRemovePlayerBySocketId = async () => {
     const player = await removePlayerBySocketId(socket.id)
 
     if (!player || !player.table) return
@@ -273,7 +309,7 @@ const init = ({ socket, io }: IInIt) => {
         playerId: player.id,
       })
     }
-  })
+  }
 
   let intervalId: NodeJS.Timeout | null = null
 

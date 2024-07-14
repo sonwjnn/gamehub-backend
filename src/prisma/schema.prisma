@@ -365,6 +365,8 @@ model Participant {
 
   sidePots SidePot[]
 
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
   @@unique([playerId, matchId])
   @@map(name: "participant")
 }
