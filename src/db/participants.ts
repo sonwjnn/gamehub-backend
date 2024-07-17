@@ -45,6 +45,7 @@ export const handleParticipantFold = async (id: string) => {
     })
     return participant
   } catch (error) {
+    console.log(error)
     return null
   }
 }
@@ -66,6 +67,9 @@ const raise = async (
       },
       data: {
         bet: amount,
+        totalBet: {
+          increment: amount,
+        },
         lastAction: type,
         isAllIn: type === RaiseType.ALLIN,
       },
@@ -168,6 +172,9 @@ const callRaise = async (
       },
       data: {
         bet: {
+          increment: amountCalled,
+        },
+        totalBet: {
           increment: amountCalled,
         },
         lastAction: PokerActions.CALL,

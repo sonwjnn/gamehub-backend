@@ -357,6 +357,7 @@ model Participant {
   cardTwo   Card?   @relation("CardTwo", fields: [cardTwoId], references: [id])
 
   bet       Int     @default(0)
+  totalBet  Int     @default(0) @map(name: "total_bet")
   isChecked Boolean @default(false) @map(name: "is_checked")
   isFolded  Boolean @default(true) @map(name: "is_folded")
   isAllIn   Boolean @default(false) @map(name: "is_all_in")

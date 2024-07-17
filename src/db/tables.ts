@@ -305,6 +305,9 @@ const resetBetsAndActions = async (matchId: string, limit: number) => {
     await db.participant.updateMany({
       where: {
         matchId,
+        NOT: {
+          lastAction: 'ALLIN',
+        },
       },
       data: {
         isChecked: false,
@@ -662,6 +665,9 @@ export const placeBlinds = async (
       },
       data: {
         bet: amount,
+        totalBet: {
+          increment: amount,
+        },
       },
     })
 
@@ -693,7 +699,10 @@ const resetActionIfAllin = async (
     await Promise.all(
       unfoldedParticipants.map(
         async (participant: ParticipantWithPlayerAndCards) => {
-          if (participant.lastAction !== 'FOLD') {
+          if (
+            participant.lastAction !== 'FOLD' &&
+            participant.lastAction !== 'ALLIN'
+          ) {
             await db.participant.update({
               where: {
                 id: participant.id,
@@ -838,6 +847,7 @@ export const changeTurn = async (
 
     return nextPlayerId
   } catch (error) {
+    console.log(error)
     return ''
   }
 }
@@ -878,8 +888,8 @@ const calculateSidePots = async (matchId: string) => {
 
     if (!currentMatch) return null
 
-    const allInParticipants = await getAllInThisTurn(matchId)
-    const unfoldedParticipants = await getUnfoldedParticipants(matchId)
+    let allInParticipants = await getAllInThisTurn(matchId)
+    let unfoldedParticipants = await getUnfoldedParticipants(matchId)
 
     if (allInParticipants.length < 1) return null
 
@@ -900,15 +910,15 @@ const calculateSidePots = async (matchId: string) => {
         let canCreateSidePot = false
         let sidePotAmount = 0
         let possibleParticipantIds = []
-        for (const participant of unfoldedParticipants) {
-          if (participant.id === allInParticipant.id) continue
+        for (const unfoldedParticipant of unfoldedParticipants) {
+          if (unfoldedParticipant.id === allInParticipant.id) continue
 
-          const amountOver = participant.bet - allInParticipant.bet
+          const amountOver = unfoldedParticipant.totalBet - allInParticipant.bet
 
           if (amountOver > 0) {
             const lastSidePot = await db.sidePot.findFirst({
               where: {
-                matchId: participant.matchId,
+                matchId: unfoldedParticipant.matchId,
               },
               orderBy: {
                 createdAt: 'desc',
@@ -931,44 +941,45 @@ const calculateSidePots = async (matchId: string) => {
               mainPot -= amountOver
             }
 
-            await db.participant.update({
-              where: { id: participant.id },
-              data: {
-                bet: {
-                  decrement: allInParticipant.bet,
-                },
-              },
+            unfoldedParticipants = unfoldedParticipants.map(participant => {
+              if (participant.id === unfoldedParticipant.id) {
+                return {
+                  ...participant,
+                  // bet: participant.bet - allInParticipant.bet,
+                  totalBet: participant.totalBet - allInParticipant.bet,
+                }
+              } else {
+                return participant
+              }
             })
 
             canCreateSidePot = true
-            possibleParticipantIds.push({ id: participant.id })
+            possibleParticipantIds.push({ id: unfoldedParticipant.id })
             sidePotAmount += amountOver
           }
         }
 
         if (canCreateSidePot && possibleParticipantIds.length) {
-          const sidePot = await db.sidePot.create({
+          await db.sidePot.create({
             data: {
               matchId,
-            },
-          })
-
-          await db.sidePot.update({
-            where: { id: sidePot.id },
-            data: {
               participants: {
                 connect: possibleParticipantIds,
               },
-              amount: {
-                increment: sidePotAmount,
-              },
+              amount: sidePotAmount,
             },
           })
         }
 
-        await db.participant.update({
-          where: { id: allInParticipant.id },
-          data: { bet: 0 },
+        allInParticipants = allInParticipants.map(p => {
+          if (p.id === allInParticipant.id) {
+            return {
+              ...p,
+              bet: 0,
+            }
+          }
+
+          return p
         })
       }
     }
