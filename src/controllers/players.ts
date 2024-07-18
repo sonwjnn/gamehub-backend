@@ -246,13 +246,12 @@ const createPlayer = async (req: Request, res: Response) => {
 
     const isExistingPlayer = await db.player.findFirst({
       where: {
-        tableId,
         userId,
       },
     })
 
     if (isExistingPlayer) {
-      return responseHandler.badrequest(res, 'Player already exists')
+      return responseHandler.badrequest(res, 'Player is already in a table')
     }
 
     const player = await db.player.create({
