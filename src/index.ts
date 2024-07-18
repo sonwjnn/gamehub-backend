@@ -21,13 +21,14 @@ app.use('/', router())
 
 const server = http.createServer(app)
 
-//  Handle real-time poker game logic with socket.io
-const io = new Server<
-  ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  SocketData
->(server)
+// const io = new Server<
+//   ClientToServerEvents,
+//   ServerToClientEvents,
+//   InterServerEvents,
+//   SocketData
+// >(server)
+
+const io = new Server(server)
 
 io.on('connection', socket => gameSocket.init({ socket, io }))
 

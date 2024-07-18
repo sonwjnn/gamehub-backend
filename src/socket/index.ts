@@ -4,7 +4,7 @@ import {
   handleParticipantFold,
   handleParticipantRaise,
 } from './../db/participants'
-import { Socket } from 'socket.io'
+// import { Socket } from 'socket.io'
 import { db } from '../lib/db'
 import {
   ClientToServerEvents,
@@ -17,7 +17,7 @@ import {
   SocketData,
   TableWithPlayers,
 } from '../types'
-import { Server } from 'socket.io'
+// import { Server } from 'socket.io'
 
 import { Card, Participant } from '@prisma/client'
 import { PokerActions } from '../pokergame/actions'
@@ -30,19 +30,11 @@ import {
   getHighlightCardsForPlayer,
 } from '../db/poker'
 
+import { Socket, Server } from 'socket.io'
+
 interface IInIt {
-  socket: Socket<
-    ClientToServerEvents,
-    ServerToClientEvents,
-    InterServerEvents,
-    SocketData
-  >
-  io: Server<
-    ClientToServerEvents,
-    ServerToClientEvents,
-    InterServerEvents,
-    SocketData
-  >
+  socket: Socket
+  io: Server
 }
 
 const DELAY_BETWEEN_MATCHES = 12000
