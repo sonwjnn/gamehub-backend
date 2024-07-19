@@ -695,7 +695,16 @@ const resetActionIfAllin = async (
   )
   if (!currentParticipant) return null
 
-  if (currentParticipant.lastAction === 'ALLIN') {
+  const isRaiseAction =
+    currentParticipant.lastAction === 'RAISE' ||
+    currentParticipant.lastAction === 'HALF' ||
+    currentParticipant.lastAction === 'QUARTER' ||
+    currentParticipant.lastAction === 'FULL'
+
+  if (
+    currentParticipant.lastAction === 'ALLIN' ||
+    (isRaiseAction && currentParticipant.player.stack === 0)
+  ) {
     await Promise.all(
       unfoldedParticipants.map(
         async (participant: ParticipantWithPlayerAndCards) => {
