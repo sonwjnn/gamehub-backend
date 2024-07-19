@@ -68,7 +68,7 @@ const raise = async (
       data: {
         bet: amount,
         totalBet: {
-          increment: amount,
+          increment: reRaiseAmount,
         },
         lastAction: type,
         isAllIn: type === RaiseType.ALLIN,

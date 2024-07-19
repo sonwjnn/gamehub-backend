@@ -925,6 +925,7 @@ const calculateSidePots = async (matchId: string) => {
           const amountOver = unfoldedParticipant.totalBet - allInParticipant.bet
 
           if (amountOver > 0) {
+            console.log(amountOver)
             const lastSidePot = await db.sidePot.findFirst({
               where: {
                 matchId: unfoldedParticipant.matchId,
