@@ -85,3 +85,22 @@ export const updateUserById = async (
     throw new Error('Internal Error')
   }
 }
+
+export const deleteUserById = async (
+  id: string
+) => {
+  try {
+    const res = await db.user.update({
+      where: {
+        id
+      },
+      data: {
+        removedAt: new Date()
+      }
+    })
+
+    return res;
+  } catch {
+    throw new Error('Internal Error')
+  }
+}

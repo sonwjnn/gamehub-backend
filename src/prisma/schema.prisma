@@ -38,6 +38,7 @@ model User {
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
+  removedAt DateTime? @map(name: "removed_at")
 
   @@map(name: "users")
 }
@@ -69,6 +70,7 @@ model Table {
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
+  removedAt DateTime? @map(name: "removed_at")
 
   @@index([userId])
   @@map(name: "tables")

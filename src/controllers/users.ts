@@ -1,5 +1,5 @@
 import express from 'express'
-import { getUsers, getUserById, updateUserById } from '../db/users'
+import { getUsers, getUserById, updateUserById, deleteUserById } from '../db/users'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
 
@@ -14,15 +14,11 @@ const getAllUsers = async (req: express.Request, res: express.Response) => {
   }
 }
 
-const deleteUserById = async (req: express.Request, res: express.Response) => {
+const deleteUser = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params
 
-    await db.user.delete({
-      where: {
-        id,
-      },
-    })
+    await deleteUserById(id)
 
     return responseHandler.ok(res, { message: 'Delete user successfully!' })
   } catch (error) {
@@ -96,7 +92,7 @@ const updateAll = async (req: express.Request, res: express.Response) => {
 export default {
   getAllUsers,
   getUser,
-  deleteUserById,
+  deleteUser,
   update,
   updateAll,
 }
