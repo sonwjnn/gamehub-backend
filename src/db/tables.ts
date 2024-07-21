@@ -917,65 +917,61 @@ const calculateSidePots = async (matchId: string) => {
     for (const allInParticipant of sortedAllInParticipants) {
       if (allInParticipant.bet <= 0) continue
 
-      let canCreateSidePot = false
       let sidePotAmount = 0
-      let possibleParticipantIds = []
+      let eligibleParticipantIds: { id: string }[] = []
+
       for (const unfoldedParticipant of unfoldedParticipants) {
         if (unfoldedParticipant.id === allInParticipant.id) continue
 
         const amountOver = unfoldedParticipant.totalBet - allInParticipant.bet
 
-        if (amountOver > 0) {
-          console.log(amountOver)
-          const lastSidePot = await db.sidePot.findFirst({
-            where: {
-              matchId: unfoldedParticipant.matchId,
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
-            take: 1,
-          })
+        if (amountOver <= 0) continue
 
-          if (lastSidePot && lastSidePot.amount > 0) {
-            await db.sidePot.update({
-              where: {
-                id: lastSidePot.id,
-              },
-              data: {
-                amount: {
-                  decrement: amountOver,
-                },
-              },
-            })
-          } else {
-            mainPot -= amountOver
-          }
+        const lastSidePot = await db.sidePot.findFirst({
+          where: {
+            matchId: unfoldedParticipant.matchId,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        })
 
-          unfoldedParticipants = unfoldedParticipants.map(participant => {
-            if (participant.id === unfoldedParticipant.id) {
-              return {
-                ...participant,
-                // bet: participant.bet - allInParticipant.bet,
-                totalBet: participant.totalBet - allInParticipant.bet,
-              }
-            } else {
-              return participant
-            }
-          })
-
-          canCreateSidePot = true
-          possibleParticipantIds.push({ id: unfoldedParticipant.id })
+        if (lastSidePot && lastSidePot.amount > 0) {
           sidePotAmount += amountOver
+          eligibleParticipantIds.push({ id: unfoldedParticipant.id })
+
+          await db.sidePot.update({
+            where: {
+              id: lastSidePot.id,
+            },
+            data: {
+              amount: {
+                decrement: amountOver,
+              },
+            },
+          })
+        } else {
+          mainPot -= amountOver
         }
+
+        unfoldedParticipants = unfoldedParticipants.map(participant => {
+          if (participant.id === unfoldedParticipant.id) {
+            return {
+              ...participant,
+              totalBet: participant.totalBet - allInParticipant.bet,
+            }
+          } 
+          return participant
+        })
       }
 
-      if (canCreateSidePot && possibleParticipantIds.length) {
+      if (sidePotAmount > 0 && eligibleParticipantIds.length) {
         await db.sidePot.create({
           data: {
             matchId,
             participants: {
-              connect: possibleParticipantIds,
+              connect: eligibleParticipantIds,
             },
             amount: sidePotAmount,
           },
