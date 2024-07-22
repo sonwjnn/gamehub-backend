@@ -2,6 +2,63 @@ import { Request, Response } from 'express'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
 
+const getAllHistories = async (req: Request, res: Response) => {
+  try {
+    const winHistories = await db.winMessages.findMany({
+      include: {
+        match: {
+          include: {
+            table: true,
+          },
+        },
+        user: {
+          select: {
+            username: true
+          }
+        }
+      },
+    })
+
+    const loseHistory = await db.loseHistory.findMany({
+      include: {
+        match: {
+          include: {
+            table: true,
+          },
+        },
+        user: {
+          select: {
+            username: true
+          }
+        }
+      },
+    })
+
+    const formatedWinHistories = winHistories.map(history => ({
+      ...history,
+      type: 'win'
+    }))
+
+    const formatedLoseHistories = loseHistory.map(history => ({
+      ...history,
+      type: 'lose'
+    }))
+
+    responseHandler.ok(
+      res,
+      [...formatedWinHistories, ...formatedLoseHistories].sort((a, b) => {
+        const dateA = new Date(a.createdAt)
+        const dateB = new Date(b.createdAt)
+
+        return dateB.getTime() - dateA.getTime()
+      })
+    )
+  } catch (error) {
+    console.log(error)
+    responseHandler.error(res)
+  }
+}
+
 const getHistoriesByUserId = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params
@@ -10,13 +67,17 @@ const getHistoriesByUserId = async (req: Request, res: Response) => {
       where: {
         userId,
       },
-
       include: {
         match: {
           include: {
             table: true,
           },
         },
+        user: {
+          select: {
+            username: true
+          }
+        }
       },
     })
 
@@ -31,6 +92,11 @@ const getHistoriesByUserId = async (req: Request, res: Response) => {
             table: true,
           },
         },
+        user: {
+          select: {
+            username: true
+          }
+        }
       },
     })
 
@@ -102,6 +168,7 @@ const getStatisticalByTableId = async (req: Request, res: Response) => {
 }
 
 export default {
+  getAllHistories,
   getHistoriesByUserId,
   getStatisticalByTableId,
 }
