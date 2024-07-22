@@ -5,6 +5,9 @@ import { Prisma } from '@prisma/client'
 export const getBanks = async () => {
   try {
     const bank = await db.bank.findMany({
+      where: {
+        removedAt: null
+      },
       include: {
         user: true,
       },
@@ -43,6 +46,23 @@ export const updateBankById = async (
     })
 
     return bank
+  } catch {
+    throw new Error('Internal Error')
+  }
+}
+
+export const deleteBank = async (id: string) => {
+  try {
+    const result = await db.bank.update({
+      where: {
+        id
+      },
+      data: {
+        removedAt: new Date()
+      }
+    })
+
+    return result
   } catch {
     throw new Error('Internal Error')
   }

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
-import { getRechargeById, getRecharges } from '../db/recharges'
+import { deleteRecharge, getRechargeById, getRecharges } from '../db/recharges'
 
 const getAllRecharges = async (req: Request, res: Response) => {
   try {
@@ -18,11 +18,7 @@ const deleteRechargeById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
 
-    await db.recharge.delete({
-      where: {
-        id,
-      },
-    })
+    await deleteRecharge(id)
 
     responseHandler.ok(res)
   } catch (error) {

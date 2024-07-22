@@ -5,6 +5,9 @@ import { Prisma } from '@prisma/client'
 export const getRecharges = async () => {
   try {
     const recharge = await db.recharge.findMany({
+      where: {
+        removedAt: null
+      },
       include: {
         bank: {
           include: {
@@ -47,6 +50,23 @@ export const updateRechargeById = async (
     })
 
     return recharge
+  } catch {
+    throw new Error('Internal Error')
+  }
+}
+
+export const deleteRecharge = async (id: string) => {
+  try {
+    const result = await db.recharge.update({
+      where: {
+        id
+      },
+      data: {
+        removedAt: new Date()
+      }
+    })
+
+    return result
   } catch {
     throw new Error('Internal Error')
   }

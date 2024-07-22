@@ -5,6 +5,9 @@ import { Prisma } from '@prisma/client'
 export const getWithdraws = async () => {
   try {
     const withdraw = await db.withdraw.findMany({
+      where: {
+        removedAt: null
+      },
       include: {
         bank: {
           include: {

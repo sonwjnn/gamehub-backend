@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
-import { getBankById, getBanks } from '../db/banks'
+import { deleteBank, getBankById, getBanks } from '../db/banks'
 
 const getAllBanks = async (req: Request, res: Response) => {
   try {
@@ -18,11 +18,7 @@ const deleteBankById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
 
-    await db.bank.delete({
-      where: {
-        id,
-      },
-    })
+    await deleteBank(id)
 
     responseHandler.ok(res)
   } catch (error) {

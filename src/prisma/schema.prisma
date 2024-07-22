@@ -245,6 +245,7 @@ model Bank {
 
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
+  removedAt DateTime? @map(name: "removed_at")
 
   @@unique([userId, cardNumber])
   @@index([userId])
@@ -270,6 +271,7 @@ model Recharge {
   branch  String?
 
   createdAt DateTime @default(now()) @map(name: "created_at")
+  removedAt DateTime? @map(name: "removed_at")
 
   @@map(name: "recharges")
 }
@@ -283,6 +285,7 @@ model Withdraw {
   status BankActionStatus @default(PENDING)
 
   createdAt DateTime @default(now()) @map(name: "created_at")
+  removedAt DateTime? @map(name: "removed_at")
 
   @@map(name: "withdraws")
 }
