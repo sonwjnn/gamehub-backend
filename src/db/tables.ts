@@ -787,14 +787,6 @@ export const changeTurn = async (
     const isActionIsComplete = await isActionComplete(currentMatch)
 
     if (isActionIsComplete) {
-      let roundNameBeforeComplete = currentMatch?.isRiver
-        ? 'River'
-        : currentMatch?.isTurn
-          ? 'Turn'
-          : currentMatch?.isFlop
-            ? 'Flop'
-            : 'PreFlop'
-
       await calculateSidePots(participant.matchId)
 
       let match = await dealNextStreet(participant.matchId)
@@ -812,7 +804,6 @@ export const changeTurn = async (
         },
         data: {
           isAllAllIn: true,
-          roundNameBeforeComplete,
         },
       })
 
