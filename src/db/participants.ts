@@ -72,7 +72,6 @@ const raise = async (
         },
         lastAction: type,
         isAllIn: type === RaiseType.ALLIN,
-        actionAt: new Date(),
       },
       include: {
         player: {
