@@ -3,6 +3,7 @@ import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
 import { getTableById } from '../db/tables'
 import { PokerActions } from '../pokergame/actions'
+import { Table } from '@prisma/client'
 
 const getAllTables = async (req: Request, res: Response) => {
   try {
@@ -114,78 +115,213 @@ const switchTable = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
     const { playerId } = req.body
+  
 
-    const existingTable = await db.table.findUnique({
+    const currentPlayer = await db.player.findUnique({
       where: {
-        id,
-      },
+        id: playerId
+      }
     })
 
-    if (!existingTable) {
-      return responseHandler.badrequest(res, 'Table not found')
-    }
+    let stackOfCurrentUser = currentPlayer?.stack ?? 0;
 
     const tables = await db.table.findMany({
-      include: {
-        players: true,
-      },
-    })
-
-    const sameBuyInTables = tables.filter(
-      table => table.minBuyIn === existingTable.minBuyIn
-    )
-
-    // Filter tables that are not full
-    const notFullTables = sameBuyInTables.filter(
-      table => table.players.length < table.maxPlayers
-    )
-
-    // If there are not full tables, use them, otherwise use all tables
-    const targetTables = notFullTables.length > 0 ? notFullTables : null
-
-    if (!targetTables) {
-      return responseHandler.badrequest(res, 'Table is full')
-    }
-
-    const currentTableIndex = targetTables.findIndex(
-      table => table.id === existingTable.id
-    )
-
-    let nextTable = null
-    if (currentTableIndex + 1 < targetTables.length) {
-      nextTable = targetTables[currentTableIndex + 1]
-    } else {
-      nextTable = targetTables[0]
-    }
-
-    if (!nextTable) {
-      return responseHandler.badrequest(res, 'Table not found')
-    }
-
-    const existingPlayer = await db.player.findUnique({
       where: {
-        id: playerId,
+        removedAt: null,
       },
       include: {
-        user: true,
+        players: true
       },
+      orderBy: { 
+        minBuyIn: 'asc'
+      }
     })
 
-    if (!existingPlayer) {
-      return responseHandler.badrequest(res, 'Player not found')
+    const notFullTables = tables.filter((table) => table.players.length < table.maxPlayers)
+
+    if (notFullTables.length === 0) {
+      responseHandler.badrequest(res, 'No available tables')
     }
 
-    if (
-      existingPlayer.stack + existingPlayer.user.chipsAmount <
-      nextTable.minBuyIn
-    ) {
-      return responseHandler.badrequest(res, 'Not enough chips')
+    // Get tables with max_buy_in is less than the stack of current player
+    const tablesWithMaxBuyInLessThanCurrentStack = notFullTables.filter(
+      (table) => table.maxBuyIn <= stackOfCurrentUser)
+
+    if (tablesWithMaxBuyInLessThanCurrentStack.length > 0) {
+      const randomTable = tablesWithMaxBuyInLessThanCurrentStack.length === 0 ? tablesWithMaxBuyInLessThanCurrentStack[0] : getRandomTable(tablesWithMaxBuyInLessThanCurrentStack)
+      const maxBuyIn = randomTable.maxBuyIn
+
+      const interestAmount = stackOfCurrentUser - maxBuyIn
+      stackOfCurrentUser = maxBuyIn
+
+      await updateStackForPlayer({
+        amount: stackOfCurrentUser, 
+        playerId
+      })
+
+      await updateChipsForPlayer({
+        amount: interestAmount, 
+        playerId,
+        type: 'increase'
+      })
+
+      await updateTableIdForPlayer({playerId, tableId: randomTable.id})
+
+      responseHandler.ok(res, {
+        movedTableId: randomTable.id
+      })
+      return;
     }
 
-    responseHandler.ok(res, nextTable)
+    // Get the table with minimum min_buy_in
+    const tableWithTheGreatestMinBuyIn = getRandomTable(notFullTables)
+
+    const minBuyIn = tableWithTheGreatestMinBuyIn.minBuyIn
+    if (minBuyIn <= stackOfCurrentUser) {
+      const interestAmount = stackOfCurrentUser - minBuyIn
+      stackOfCurrentUser = minBuyIn
+
+      await updateStackForPlayer({
+        amount: stackOfCurrentUser, 
+        playerId
+      })
+
+      await updateChipsForPlayer({
+        amount: interestAmount, 
+        playerId,
+        type: 'increase'
+      })
+    
+      await updateTableIdForPlayer({playerId, tableId: tableWithTheGreatestMinBuyIn.id})
+
+      responseHandler.ok(res, {
+        movedTableId: tableWithTheGreatestMinBuyIn.id
+      })
+      return;
+    }
+
+    // Recharge for moving table
+    const rechargeAmount = minBuyIn - stackOfCurrentUser
+    stackOfCurrentUser = minBuyIn
+
+    await updateStackForPlayer({
+      amount: stackOfCurrentUser, 
+      playerId
+    })
+
+    await updateChipsForPlayer({
+      amount: rechargeAmount, 
+      playerId,
+      type: 'decrease'
+    })
+
+    await updateTableIdForPlayer({playerId, tableId: tableWithTheGreatestMinBuyIn.id})
+
+    responseHandler.ok(res, {
+      movedTableId: tableWithTheGreatestMinBuyIn.id
+    })
+
+    return;
   } catch (error) {
     console.log(error)
     responseHandler.error(res)
+  }
+}
+
+const getRandomTable = (tables: Table[]) => {
+  const randomIndex = Math.floor(Math.random() * (tables.length - 1))
+  return tables[randomIndex]
+}
+
+const updateStackForPlayer = async (
+{ amount, playerId }: { amount: number; playerId: string }) => {
+  try {
+    const result = await db.player.update({
+      where: {
+        id: playerId
+      }, 
+      data: {
+        stack: amount
+      }
+    })
+
+    return result
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const updateChipsForPlayer = async (
+{ 
+  amount, 
+  playerId, 
+  type 
+}: { 
+  amount: number; 
+  playerId: string; 
+  type: 'increase' | 'decrease' 
+}) => {
+  try {
+    const currentUser = await db.player.findUnique({
+      where: {
+        id: playerId
+      }, 
+      select: {
+        userId: true
+      }
+    })
+
+    if (type === 'increase') {
+      const result = await db.user.update({
+        where: {
+          id: currentUser?.userId
+        }, 
+        data: {
+          chipsAmount: {
+            increment: amount
+          }
+        }
+      })
+
+      return result
+    }
+
+    const result = await db.user.update({
+      where: {
+        id: currentUser?.userId
+      }, 
+      data: {
+        chipsAmount: {
+          decrement: amount
+        }
+      }
+    })
+
+    return result
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const updateTableIdForPlayer = async (
+{
+  playerId,
+  tableId
+} : { playerId: string; tableId: string }
+) => {
+  try {
+    const result = await db.player.update({
+      where: {
+        id: playerId
+      }, 
+      data: {
+        tableId
+      }
+    })
+
+    return result
+  } catch (err) {
+    console.error(err)
   }
 }
 
