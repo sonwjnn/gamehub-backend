@@ -124,7 +124,7 @@ export const handleParticipantRaise = async (
 
     const currentMatch = currentParticipant.match
 
-    let addedToPot = Math.min(amount - currentParticipant.bet, amount)
+    let addedToPot = amount - currentParticipant.bet
 
     const data = await raise(currentParticipant, amount, type)
 
@@ -145,9 +145,7 @@ export const handleParticipantRaise = async (
         pot: {
           increment: addedToPot,
         },
-        callAmount: {
-          increment: addedToPot,
-        },
+        callAmount: Math.max(amount, currentMatch.callAmount),
         minRaise: updatedMinRaise,
       },
     })
