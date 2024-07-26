@@ -356,6 +356,7 @@ const init = ({ socket, io }: IInIt) => {
               isTurn: false,
             }
           }),
+          match,
         })
       }
 
