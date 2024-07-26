@@ -234,6 +234,11 @@ const isActionComplete = async (match: Match) => {
       }
     }
 
+    // Check if with 2 players and one of them is all in
+    if (currentPariticipants.length === 2 && filteredParticipants.length === 1) {
+      return true
+    }
+
     // if (
     //   filteredParticipants.length === 1 &&
     //   (filteredParticipants[0].lastAction === 'RAISE' ||
