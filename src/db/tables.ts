@@ -217,15 +217,32 @@ const isActionComplete = async (match: Match) => {
       return true
     }
 
-    if (
-      filteredParticipants.length === 1 &&
-      (filteredParticipants[0].lastAction === 'RAISE' ||
-        filteredParticipants[0].lastAction === 'HALF' ||
-        filteredParticipants[0].lastAction === 'QUARTER' ||
-        filteredParticipants[0].lastAction === 'FULL')
-    ) {
-      return true
+    const firstBetPlayerIndex = currentPariticipants.findIndex((participant) => (
+      participant.lastAction === 'RAISE' ||
+      participant.lastAction === 'HALF' ||
+      participant.lastAction === 'QUARTER' ||
+      participant.lastAction === 'FULL' || 
+      participant.lastAction === 'ALLIN'
+    ))
+
+    // Check if next players balance amount and then stack = 0
+    if (firstBetPlayerIndex <= currentPariticipants.length - 2) {
+      for (let i = firstBetPlayerIndex + 1; i < currentPariticipants.length - 1; i++) {
+        if (currentPariticipants[i].player.stack === 0) {
+          return true
+        }
+      }
     }
+
+    // if (
+    //   filteredParticipants.length === 1 &&
+    //   (filteredParticipants[0].lastAction === 'RAISE' ||
+    //     filteredParticipants[0].lastAction === 'HALF' ||
+    //     filteredParticipants[0].lastAction === 'QUARTER' ||
+    //     filteredParticipants[0].lastAction === 'FULL')
+    // ) {
+    //   return true
+    // }
 
     const participant = filteredParticipants[0]
 
@@ -782,9 +799,10 @@ export const changeTurn = async (
       return ''
     }
 
-    await resetActionIfAllin(unfoldedParticipants, currentPlayer.id)
-
+    
     const isActionIsComplete = await isActionComplete(currentMatch)
+
+    await resetActionIfAllin(unfoldedParticipants, currentPlayer.id)
 
     if (isActionIsComplete) {
       await calculateSidePots(participant.matchId)
