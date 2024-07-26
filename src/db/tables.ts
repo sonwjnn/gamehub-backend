@@ -217,42 +217,44 @@ const isActionComplete = async (match: Match) => {
       return true
     }
 
-    const firstBetPlayerIndex = currentPariticipants.findIndex((participant) => (
-      participant.lastAction === 'RAISE' ||
-      participant.lastAction === 'HALF' ||
-      participant.lastAction === 'QUARTER' ||
-      participant.lastAction === 'FULL' || 
-      participant.lastAction === 'ALLIN'
-    ))
+    // handle allin like call action
+    const filterdParticipantsNotEnoughStack = currentPariticipants.filter(
+      participant => participant.player.stack === 0
+    )
 
-    // Check if next players balance amount and then stack = 0
-    if (firstBetPlayerIndex <= currentPariticipants.length - 2) {
-      for (let i = firstBetPlayerIndex + 1; i < currentPariticipants.length - 1; i++) {
-        if (currentPariticipants[i].player.stack === 0) {
-          return true
-        }
-      }
-    }
+    const isAllBetUnderCallAmount = filterdParticipantsNotEnoughStack.every(
+      p => p.bet < match.callAmount
+    )
 
-    // Check if with 2 players and one of them is all in
-    if (currentPariticipants.length === 2 && filteredParticipants.length === 1) {
+    if (filteredParticipants.length === 1 && isAllBetUnderCallAmount) {
       return true
     }
 
-    // if (
-    //   filteredParticipants.length === 1 &&
-    //   (filteredParticipants[0].lastAction === 'RAISE' ||
-    //     filteredParticipants[0].lastAction === 'HALF' ||
-    //     filteredParticipants[0].lastAction === 'QUARTER' ||
-    //     filteredParticipants[0].lastAction === 'FULL')
-    // ) {
+    // const firstBetPlayerIndex = currentPariticipants.findIndex((participant) => (
+    //   participant.lastAction === 'RAISE' ||
+    //   participant.lastAction === 'HALF' ||
+    //   participant.lastAction === 'QUARTER' ||
+    //   participant.lastAction === 'FULL' ||
+    //   participant.lastAction === 'ALLIN'
+    // ))
+
+    // Check if next players balance amount and then stack = 0
+    // if (firstBetPlayerIndex <= currentPariticipants.length - 2) {
+    //   for (let i = firstBetPlayerIndex + 1; i < currentPariticipants.length - 1; i++) {
+    //     if (currentPariticipants[i].player.stack === 0) {
+    //       return true
+    //     }
+    //   }
+    // }
+
+    // // Check if with 2 players and one of them is all in
+    // if (currentPariticipants.length === 2 && filteredParticipants.length === 1) {
     //   return true
     // }
 
-    const participant = filteredParticipants[0]
-
     const result =
-      filteredParticipants.length === 1 && participant.lastAction === 'CALL'
+      filteredParticipants.length === 1 &&
+      filteredParticipants[0].lastAction === 'CALL'
 
     return result
   } catch {
@@ -804,10 +806,9 @@ export const changeTurn = async (
       return ''
     }
 
-    
-    const isActionIsComplete = await isActionComplete(currentMatch)
-
     await resetActionIfAllin(unfoldedParticipants, currentPlayer.id)
+
+    const isActionIsComplete = await isActionComplete(currentMatch)
 
     if (isActionIsComplete) {
       await calculateSidePots(participant.matchId)
@@ -816,7 +817,6 @@ export const changeTurn = async (
 
       if (!match) return ''
 
-      // this.calculateSidePots()
       while (match && !match.isShowdown && !match.table.handOver) {
         match = await dealNextStreet(participant.matchId)
       }
