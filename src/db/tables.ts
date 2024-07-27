@@ -810,6 +810,7 @@ export const changeTurn = async (
 
     const isActionIsComplete = await isActionComplete(currentMatch)
 
+    // Showdown happens
     if (isActionIsComplete) {
       await calculateSidePots(participant.matchId)
 
@@ -956,9 +957,10 @@ const calculateSidePots = async (matchId: string) => {
                   id: lastSidePot.id,
                 },
                 data: {
-                  amount: {
-                    decrement: amountOver,
-                  },
+                  // amount: {
+                  //   decrement: amountOver,
+                  // },
+                  amount: Math.max(allInParticipant.bet, unfoldedParticipant.bet) - Math.min(allInParticipant.bet, unfoldedParticipant.bet)
                 },
               })
             } else {
