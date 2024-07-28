@@ -82,6 +82,13 @@ const raise = async (
       },
     })
 
+    console.log({
+      time: `${new Date().getHours()}:${new Date().getMinutes()}:${new Date().getSeconds()} - ${new Date().getDate()}/${new Date().getMonth()+1}/${new Date().getFullYear()}`,
+      type,
+      username: participant.player.user.username,
+      totalBet: participant.totalBet
+    })
+
     const updatedPlayer = await db.player.update({
       where: {
         id: currentParticipant.playerId,
@@ -186,6 +193,13 @@ const callRaise = async (
           },
         },
       },
+    })
+
+    console.log({
+      time: `${new Date().getHours()}:${new Date().getMinutes()}:${new Date().getSeconds()} - ${new Date().getDate()}/${new Date().getMonth()+1}/${new Date().getFullYear()}`,
+      type: "CALL",
+      username: participant.player.user.username,
+      totalBet: participant.totalBet
     })
 
     const updatedPlayer = await db.player.update({

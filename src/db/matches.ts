@@ -118,6 +118,7 @@ export const createMatch = async (tableId: string) => {
         anteSum += table.ante
       }
     }
+    
 
     // set blinds
     const isHeadUp = table.players.length === 2
