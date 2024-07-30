@@ -1033,6 +1033,13 @@ const calculateSidePots = async (matchId: string) => {
       where: {
         id: matchId,
       },
+      select: {
+        table: {
+          select: {
+            name: true
+          }
+        }
+      }
     })
 
     if (!currentMatch) return null
@@ -1151,6 +1158,17 @@ const calculateSidePots = async (matchId: string) => {
         )
       )
     }
+
+    // Store extra data (empty) for seperate between matches
+    await db.participantRaiseHistory.create({
+      data: {
+        title: "[GAME] Finished game and SHOWDOWN",
+        username: '[EMPTY USER FOR END GAME]',
+        totalBet: 0,
+        raiseType: "[EMPTY TYPE FOR END GAME]",
+        tableName: currentMatch.table.name
+      }
+    })
   } catch (error) {
     return null
   }
