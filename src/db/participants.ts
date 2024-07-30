@@ -77,16 +77,24 @@ const raise = async (
         player: {
           include: {
             user: true,
+            table: {
+              select: {
+                name: true
+              }
+            }
           },
         },
       },
     })
 
-    console.log({
-      time: `${new Date().getHours()}:${new Date().getMinutes()}:${new Date().getSeconds()} - ${new Date().getDate()}/${new Date().getMonth()+1}/${new Date().getFullYear()}`,
-      type,
-      username: participant.player.user.username,
-      totalBet: participant.totalBet
+    await db.participantRaiseHistory.create({
+      data: {
+        title: "[RAISE] Log raise history",
+        username: participant.player.user.username,
+        totalBet: participant.totalBet,
+        raiseType: type,
+        tableName: participant.player.table.name
+      }
     })
 
     const updatedPlayer = await db.player.update({
@@ -190,16 +198,24 @@ const callRaise = async (
         player: {
           include: {
             user: true,
+            table: {
+              select: {
+                name: true
+              }
+            }
           },
         },
       },
     })
 
-    console.log({
-      time: `${new Date().getHours()}:${new Date().getMinutes()}:${new Date().getSeconds()} - ${new Date().getDate()}/${new Date().getMonth()+1}/${new Date().getFullYear()}`,
-      type: "CALL",
-      username: participant.player.user.username,
-      totalBet: participant.totalBet
+    await db.participantRaiseHistory.create({
+      data: {
+        title: "[RAISE] Log raise history",
+        username: participant.player.user.username,
+        totalBet: participant.totalBet,
+        raiseType: "CALL",
+        tableName: participant.player.table.name
+      }
     })
 
     const updatedPlayer = await db.player.update({

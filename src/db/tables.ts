@@ -1041,12 +1041,14 @@ const calculateSidePots = async (matchId: string) => {
     let unFoldpartipants = await getUnfoldedParticipants(matchId)
     if (unFoldpartipants.length < 1 || allInParticipants.length < 1) return null
 
-    console.group('[BET] before calculating')
-    console.log(unFoldpartipants.map(p => ({
-      username: p.player.user.username,
-      totalBet: p.totalBet,
-    })))
-    console.groupEnd()
+    // Store logger history
+    let loggerData: any =  unFoldpartipants.map((p) => (
+      { username: p.player.user.username, totalBet: p.totalBet }
+    ))
+    await storeHistoryLogger(
+      '[BET] before calculating',
+      loggerData
+    )
  
     // Call mainpot
     const minAllinBet = allInParticipants
@@ -1057,12 +1059,16 @@ const calculateSidePots = async (matchId: string) => {
                                   .filter((participant) => participant.totalBet - minAllinBet > 0)
                                   .map((participant) => ({ ...participant, totalBet: participant.totalBet - minAllinBet}))
     
-    console.group('[BET] after calculating main pot')
-    console.log(unFoldpartipants.map(p => ({
-      username: p.player.user.username,
-      totalBet: p.totalBet,
-    })))
-    console.groupEnd()
+   
+
+    // Store logger history
+    loggerData =  unFoldpartipants.map((p) => (
+      { username: p.player.user.username, totalBet: p.totalBet }
+    ))
+    await storeHistoryLogger(
+      '[BET] after calculating main pot',
+      loggerData
+    )
 
     // Sort participant's bet ascending
     let sortedUnfoldPaticipants = unFoldpartipants
@@ -1107,17 +1113,18 @@ const calculateSidePots = async (matchId: string) => {
       })
     }
 
-    console.group('[SIDEPOT] amount')
-    console.log(sidePotAmount.map(s => ({
-      amount: s.amount,
-      players: s.participants.map((p) => p.id),
-    })))
-    console.groupEnd()
-
-    console.log("[MAINPOT] final mainpot ", mainPot)
+    // Store logger history
+    loggerData =  sidePotAmount.map((s) => (
+      { amount: s.amount, players: s.participants.map((p) => p.id)}
+    ))
+    await storeHistoryLogger(
+      '[SIDEPOT] sidepot amount and final mainpot - END GAME',
+      loggerData,
+      mainPot
+    )
 
     // Update mainpot
-    const match = await db.match.update({
+    await db.match.update({
       where: {
         id: matchId,
       },
@@ -1125,12 +1132,6 @@ const calculateSidePots = async (matchId: string) => {
         mainPot,
       },
     })
-
-    console.group('[MATCH] mainpont after updated')
-    console.log({
-      mainpot: match.mainPot
-    })
-    console.groupEnd()
 
     // Save sidepot to database
     if (sidePotAmount.length >= 1) { 
@@ -1150,6 +1151,20 @@ const calculateSidePots = async (matchId: string) => {
         )
       )
     }
+  } catch (error) {
+    return null
+  }
+}
+
+const storeHistoryLogger = async (title: string, data: any, amount?: number) => {
+  try {
+    await db.sidePotHistory.create({
+      data: {
+        title,
+        sidePotDetail: data,
+        mainPot: amount ?? 0
+      }
+    })
   } catch (error) {
     return null
   }

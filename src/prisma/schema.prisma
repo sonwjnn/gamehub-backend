@@ -388,3 +388,27 @@ model SidePot {
 
   @@map(name: "side_pots")
 }
+
+
+
+model ParticipantRaiseHistory {
+  id            String    @id @default(cuid())
+  tableName     String    @map(name: "table_name")
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  raiseType     String
+  username      String
+  totalBet      BigInt
+  title         String?
+
+  @@map(name: "participant_raise_history")
+}
+
+model SidePotHistory {
+  id              String    @id @default(cuid())
+  title           String
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  sidePotDetail   Json      @map(name: "side_pot_detail")
+  mainPot         BigInt?   @map(name: "main_pot")
+
+  @@map(name: "side_pot_history")
+}

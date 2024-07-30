@@ -1,4 +1,4 @@
-import express from 'express'
+import { Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 
 import { getUserByEmail, getUserByUsername, updateUserById } from '../db/users'
@@ -6,7 +6,7 @@ import { authentication, random } from '../helpers'
 import responseHandler from '../handlers/response-handler'
 import { db } from '../lib/db'
 
-const login = async (req: express.Request, res: express.Response) => {
+const login = async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body
 
@@ -48,7 +48,7 @@ const login = async (req: express.Request, res: express.Response) => {
   }
 }
 
-const register = async (req: express.Request, res: express.Response) => {
+const register = async (req: Request, res: Response) => {
   try {
     const { email, password, username } = req.body
 
@@ -83,7 +83,7 @@ const register = async (req: express.Request, res: express.Response) => {
   }
 }
 
-const newPassword = async (req: express.Request, res: express.Response) => {
+const newPassword = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
     const { password, newPassword } = req.body
@@ -120,6 +120,10 @@ const newPassword = async (req: express.Request, res: express.Response) => {
   } catch (error) {
     responseHandler.error(res)
   }
+}
+
+const authorization = async (req: Request, res: Response) => {
+
 }
 
 export default {
