@@ -36,8 +36,8 @@ model User {
   loseHistories LoseHistory[]
   winMessages   WinMessages[]
 
-  createdAt DateTime @default(now()) @map(name: "created_at")
-  updatedAt DateTime @updatedAt @map(name: "updated_at")
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime  @updatedAt @map(name: "updated_at")
   removedAt DateTime? @updatedAt @map(name: "removed_at")
 
   @@map(name: "users")
@@ -68,8 +68,8 @@ model Table {
   matches  Match[]
   decks    Deck[]
 
-  createdAt DateTime @default(now()) @map(name: "created_at")
-  updatedAt DateTime @updatedAt @map(name: "updated_at")
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime  @updatedAt @map(name: "updated_at")
   removedAt DateTime? @updatedAt @map(name: "removed_at")
 
   @@index([userId])
@@ -243,8 +243,8 @@ model Bank {
   recharges Recharge[]
   withdraws Withdraw[]
 
-  createdAt DateTime @default(now()) @map(name: "created_at")
-  updatedAt DateTime @updatedAt @map(name: "updated_at")
+  createdAt DateTime  @default(now()) @map(name: "created_at")
+  updatedAt DateTime  @updatedAt @map(name: "updated_at")
   removedAt DateTime? @updatedAt @map(name: "removed_at")
 
   @@unique([userId, cardNumber])

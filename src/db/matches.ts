@@ -100,25 +100,31 @@ export const createMatch = async (tableId: string) => {
 
     // minus ante from player stack
     let anteSum = 0
+    let updatePlayersPromises = []
+
     for (const player of table.players) {
       const updatedStack = player.stack - table.ante
 
       if (updatedStack >= 0) {
-        await db.player.update({
-          where: {
-            id: player.id,
-          },
-          data: {
-            stack: {
-              decrement: table.ante,
+        // Update player's stack
+        updatePlayersPromises.push(
+          db.player.update({
+            where: {
+              id: player.id,
             },
-          },
-        })
+            data: {
+              stack: {
+                decrement: table.ante,
+              },
+            },
+          })
+        )
 
         anteSum += table.ante
       }
     }
-    
+
+    await Promise.all(updatePlayersPromises)
 
     // set blinds
     const isHeadUp = table.players.length === 2
@@ -166,6 +172,7 @@ export const createMatch = async (tableId: string) => {
       matchId: match.id,
       cardOneId: participantCards.pop().id,
       cardTwoId: participantCards.pop().id,
+      totalBet: table.ante,
     }))
 
     await db.participant.createMany({
